@@ -320,27 +320,7 @@ plt.savefig("lamia_meteogram.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
 
 
-# === Upload the generated image to your web server ===
-from ftplib import FTP
 
-# FTP credentials (replace with your real details)
-FTP_HOST = os.environ.get("FTP_HOST")         # e.g. ftp.example.com
-FTP_USER = os.environ.get("FTP_USER")         # e.g. parognosis_user
-FTP_PASS = os.environ.get("FTP_PASS")         # e.g. secretpassword
-FTP_FOLDER = os.environ.get("FTP_FOLDER")     # folder path on your server
-
-print("🌐 Connecting to FTP server...")
-ftp = FTP(FTP_HOST)
-ftp.login(FTP_USER, FTP_PASS)
-
-# Change to the target directory
-ftp.cwd(FTP_FOLDER)
-
-# Open the file and upload it
-with open("lamia_meteogram.png", "rb") as file:
-    ftp.storbinary("STOR lamia_meteogram.png", file)
-
-ftp.quit()
 
 
 
