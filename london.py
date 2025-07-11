@@ -304,10 +304,10 @@ plt.close(fig)
 from ftplib import FTP
 
 # FTP credentials (replace with your real details)
-FTP_HOST = "grhost.info"             # e.g. ftp.example.com
-FTP_USER = "parognosis"               # e.g. parognosis_user
-FTP_PASS = "#6934225193#"               # e.g. secretpassword
-FTP_FOLDER = "meteograms"        # folder path on your server
+FTP_HOST = os.environ.get("FTP_HOST")         # e.g. ftp.example.com
+FTP_USER = os.environ.get("FTP_USER")         # e.g. parognosis_user
+FTP_PASS = os.environ.get("FTP_PASS")         # e.g. secretpassword
+FTP_FOLDER = os.environ.get("FTP_FOLDER")     # folder path on your server
 
 print("🌐 Connecting to FTP server...")
 ftp = FTP(FTP_HOST)
