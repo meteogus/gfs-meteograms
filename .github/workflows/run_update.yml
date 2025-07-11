@@ -25,7 +25,7 @@ jobs:
 
     - name: 🚀 Run meteograms
       run: |
-        python athens.py
-        python kiato.py
-        python lamia.py
-        python london.py
+        python athens.py || true
+        python kiato.py || true
+        python lamia.py || true
+        python london.py || true
