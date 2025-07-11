@@ -1,4 +1,4 @@
-name: Run Meteogram Scripts
+name: Run Meteogram Scripts & Upload
 
 on:
   schedule:
@@ -6,72 +6,39 @@ on:
   workflow_dispatch:       # Allow manual trigger in GitHub
 
 jobs:
-  athens:
+  generate-meteograms:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: 🚀 Run athens.py
-        run: python athens.py
 
-  kiato:
+      - name: 🚀 Run Python scripts
+        run: |
+          python athens.py
+          python kiato.py
+          python lamia.py
+          python london.py
+
+  upload-to-ftp:
+    needs: generate-meteograms
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: 🚀 Run kiato.py
-        run: python kiato.py
 
-  lamia:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: 🚀 Run lamia.py
-        run: python lamia.py
-
-  london:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: 📦 Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: 🚀 Run london.py
-        run: python london.py
-
-
-        - name: Upload PNGs to FTP
+      - name: 🚀 Upload PNGs to FTP
         uses: SamKirkland/FTP-Deploy-Action@v4
         with:
           server: ${{ secrets.FTP_HOST }}
