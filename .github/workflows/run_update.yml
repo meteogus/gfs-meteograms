@@ -39,8 +39,9 @@ jobs:
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
         run: |
-          python -c "
-import paramiko, os
+          python - <<EOF
+import paramiko
+import os
 
 host = os.environ['SFTP_HOST']
 port = int(os.environ.get('SFTP_PORT', 22))
@@ -49,10 +50,10 @@ password = os.environ['SFTP_PASS']
 folder = os.environ.get('SFTP_FOLDER', '/').rstrip('/')
 
 files = [
-  'athens_meteogram.png',
-  'kiato_meteogram.png',
-  'lamia_meteogram.png',
-  'london_meteogram.png'
+    'athens_meteogram.png',
+    'kiato_meteogram.png',
+    'lamia_meteogram.png',
+    'london_meteogram.png'
 ]
 
 print('🌐 Connecting to SFTP server...')
@@ -69,4 +70,4 @@ for f in files:
 sftp.close()
 transport.close()
 print('✅ All files uploaded successfully.')
-"
+EOF
