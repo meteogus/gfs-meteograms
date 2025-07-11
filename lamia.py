@@ -310,7 +310,7 @@ ftp.login(FTP_USER, FTP_PASS)
 ftp.cwd(FTP_FOLDER)
 
 # Open the file and upload it
-with open("athens_meteogram.png", "rb") as file:
+with open("lamia_meteogram.png", "rb") as file:
     ftp.storbinary("STOR lamia_meteogram.png", file)
 
 ftp.quit()
