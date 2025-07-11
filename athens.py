@@ -209,9 +209,15 @@ ax_cape = axs[4]
 ax_cape.plot(times, cape, color='red', label='CAPE (J/kg)')
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
 ax_cape.tick_params(axis='y', labelcolor='black')
+
+li_times = times[::3]                # every 3 hours
+li_values = lifted_index[::3]        # every 3rd value
+colors = ['#E6DC32' if val >= 0 else '#F08228' for val in li_values]
+
+# Plot Lifted Index as bars
 ax_li = ax_cape.twinx()
-colors = ['#E6DC32' if val >= 0 else '#F08228' for val in lifted_index]
-ax_li.bar(times, lifted_index, color=colors, width=0.03, align='center')
+ax_li.bar(li_times, li_values, color=colors, width=0.08, align='center')
+
 
 ax_li.set_ylabel('Lifted index', fontsize=9, color='black')
 ax_li.tick_params(axis='y', labelcolor='black')
@@ -222,6 +228,7 @@ ax_li.axhline(0, color='gray', linestyle='--', linewidth=0.8)
 ax_cape.grid(axis='x', color='gray', linestyle='--', alpha=0.7)
 ax_cape.set_ylim(0, 800)
 ax_cape.set_yticks(np.arange(0, 1000, 200))
+
 
 
 
