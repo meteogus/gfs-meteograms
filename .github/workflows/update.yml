@@ -1,4 +1,4 @@
-name: Autoupdate Script
+name: Run Auto-update Script
 
 on:
   schedule:
