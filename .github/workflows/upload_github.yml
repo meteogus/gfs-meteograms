@@ -1,6 +1,6 @@
 #  YOU MUST REMOVE FTP CODE FROM ALL PYTHON FILES (ATHENS, KIATO etc) IN ORDER TO UPLOAD IMAGES AT GITHUB SERVER
 
-name: Upload Meteograms
+name: Upload Meteograms to GITHUB
 
 on:
   schedule:
