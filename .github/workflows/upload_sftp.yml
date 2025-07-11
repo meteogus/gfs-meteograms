@@ -40,34 +40,46 @@ jobs:
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
         run: |
           python - <<EOF
-import paramiko
-import os
+          import paramiko
+          import os
+          import sys
 
-host = os.environ['SFTP_HOST']
-port = int(os.environ.get('SFTP_PORT', 22))
-user = os.environ['SFTP_USER']
-password = os.environ['SFTP_PASS']
-folder = os.environ.get('SFTP_FOLDER', '/').rstrip('/')
+          host = os.getenv('SFTP_HOST')
+          port = int(os.getenv('SFTP_PORT', '22'))
+          user = os.getenv('SFTP_USER')
+          password = os.getenv('SFTP_PASS')
+          folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
-files = [
-    'athens_meteogram.png',
-    'kiato_meteogram.png',
-    'lamia_meteogram.png',
-    'london_meteogram.png'
-]
+          files = [
+              'athens_meteogram.png',
+              'kiato_meteogram.png',
+              'lamia_meteogram.png',
+              'london_meteogram.png'
+          ]
 
-print('🌐 Connecting to SFTP server...')
-transport = paramiko.Transport((host, port))
-transport.connect(username=user, password=password)
-sftp = paramiko.SFTPClient.from_transport(transport)
+          if not all([host, user, password]):
+              print("Missing SFTP credentials")
+              sys.exit(1)
 
-for f in files:
-    local_path = f
-    remote_path = folder + '/' + f
-    print(f'Uploading {local_path} to {remote_path} ...')
-    sftp.put(local_path, remote_path)
+          print(f"Connecting to {host}:{port} as {user}")
+          try:
+              transport = paramiko.Transport((host, port))
+              transport.connect(username=user, password=password)
+              sftp = paramiko.SFTPClient.from_transport(transport)
+          except Exception as e:
+              print(f"Failed to connect or authenticate: {e}")
+              sys.exit(1)
 
-sftp.close()
-transport.close()
-print('✅ All files uploaded successfully.')
-EOF
+          for f in files:
+              try:
+                  local_path = f
+                  remote_path = folder + '/' + f
+                  print(f"Uploading {local_path} to {remote_path} ...")
+                  sftp.put(local_path, remote_path)
+              except Exception as e:
+                  print(f"Failed to upload {f}: {e}")
+
+          sftp.close()
+          transport.close()
+          print("✅ All files uploaded successfully.")
+          EOF
