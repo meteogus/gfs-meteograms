@@ -1,4 +1,4 @@
-name: Run Athens Meteogram Script
+name: Run Meteogram Script
 
 on:
   schedule:
