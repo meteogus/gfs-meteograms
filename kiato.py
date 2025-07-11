@@ -207,29 +207,54 @@ ax_wind.set_yticks(wind_ticks[1:])  # exclude first tick
 
 # Section 5: CAPE and Lifted Index
 ax_cape = axs[4]
-ax_cape.plot(times, cape, color='red', label='CAPE (J/kg)')
+ax_cape.plot(times, cape, color='red', label='CAPE (J/kg)',zorder=5)
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
 ax_cape.tick_params(axis='y', labelcolor='black')
 
-li_times = times[::3]                # every 3 hours
-li_values = lifted_index[::3]        # every 3rd value
-colors = ['#E6DC32' if val >= 0 else '#F08228' for val in li_values]
+# Filter negative Lifted Index values every 3 hours
+time_interval_hours = 1
+li_values = lifted_index
+gfs_run_time = first_forecast_time
 
-# Plot Lifted Index as bars
+li_times = [gfs_run_time + pd.Timedelta(hours=i * time_interval_hours) for i in range(len(li_values))]
+
+neg_li_times = []
+neg_li_values = []
+
+for t, v in zip(li_times, li_values):
+    if v <= 0 and t.hour % 3 == 0:
+        neg_li_times.append(t)
+        neg_li_values.append(v)
+
 ax_li = ax_cape.twinx()
-ax_li.bar(li_times, li_values, color=colors, width=0.08, align='center')
 
 
-ax_li.set_ylabel('Lifted index', fontsize=9, color='black')
-ax_li.tick_params(axis='y', labelcolor='black')
-ax_li.set_ylim(4, -4)
-ax_li.set_yticks(np.arange(4, -5, -2))
-ax_li.axhline(0, color='gray', linestyle='--', linewidth=0.8)
 
-ax_cape.grid(axis='x', color='gray', linestyle='--', alpha=0.7)
+# Bars axis below CAPE axis
+ax_li.set_zorder(1)            # Bars axis lower
+ax_cape.set_zorder(2)          # CAPE axis above
+
+# Transparent background on CAPE axis so bars show through
+ax_cape.patch.set_alpha(0)
+
+# Plot bars on ax_li with lower zorder
+bars = ax_li.bar(neg_li_times, neg_li_values, color='#E6DC32', width=0.08, align='center', zorder=1)
+
+# Plot the red CAPE line with very high zorder on ax_cape (always on top)
+cape_line, = ax_cape.plot(times, cape, color='red', label='CAPE (J/kg)', zorder=10)
+
+# Other elements (grid, zero line)
+ax_cape.grid(axis='both', color='gray', linestyle='--', alpha=0.7, zorder=0)
 ax_cape.set_ylim(0, 800)
 ax_cape.set_yticks(np.arange(0, 1000, 200))
 
+ax_li.axhline(0, color='gray', linestyle='--', linewidth=0.8, zorder=2)
+
+# Axes labels and ticks unchanged
+ax_li.set_ylabel('Lifted index', fontsize=9, color='black')
+ax_li.tick_params(axis='y', labelcolor='black')
+ax_li.set_ylim(0, -4)
+ax_li.set_yticks(np.arange(0, -5, -1))
 
 
 
