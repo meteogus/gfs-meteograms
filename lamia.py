@@ -6,6 +6,7 @@ import pandas as pd
 import requests
 from matplotlib.ticker import FuncFormatter
 import matplotlib.ticker as ticker
+import os
 
 # Location
 latitude = 38.90
