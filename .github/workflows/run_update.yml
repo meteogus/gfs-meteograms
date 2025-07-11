@@ -1,4 +1,4 @@
-name: Run Meteogram Script
+name: Run Meteogram Scripts
 
 on:
   schedule:
@@ -6,31 +6,66 @@ on:
   workflow_dispatch:       # Allow manual trigger in GitHub
 
 jobs:
-  run-athens:
+  athens:
     runs-on: ubuntu-latest
-
     steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 🚀 Run athens.py
+        run: python athens.py
 
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+  kiato:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 🚀 Run kiato.py
+        run: python kiato.py
 
-    - name: 📦 Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+  lamia:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 🚀 Run lamia.py
+        run: python lamia.py
 
-    - name: 🚀 Run athens.py
-      run: python athens.py
-
-    - name: 🚀 Run kiato.py
-      run: python kiato.py
-
-    - name: 🚀 Run lamia.py
-      run: python lamia.py
-
-    - name: 🚀 Run london.py
-      run: python london.py
+  london:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: 🚀 Run london.py
+        run: python london.py
