@@ -23,7 +23,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 🚀 Run Athens script
+    - name: 🚀 Run meteograms 
       run: python athens.py
-    - name: 🚀 Run London script
       run: python london.py
