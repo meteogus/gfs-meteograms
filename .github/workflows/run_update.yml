@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🚀 Upload PNGs to FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v3
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
