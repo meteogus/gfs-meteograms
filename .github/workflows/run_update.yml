@@ -69,3 +69,18 @@ jobs:
           pip install -r requirements.txt
       - name: 🚀 Run london.py
         run: python london.py
+
+
+        - name: Upload PNGs to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: . # Current directory
+          server-dir: ${{ secrets.FTP_FOLDER }}
+          exclude: |
+            **.git*
+            **/.github/**
+            **/*.py
+            **/requirements.txt
