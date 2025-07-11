@@ -23,6 +23,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 🚀 Run meteograms
-      run: |
-        python london.py || true
+    - name: 🚀 Run athens.py
+      run: python athens.py
+
+    - name: 🚀 Run kiato.py
+      run: python kiato.py
+
+    - name: 🚀 Run lamia.py
+      run: python lamia.py
+
+    - name: 🚀 Run london.py
+      run: python london.py
