@@ -51,10 +51,10 @@ jobs:
           folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
           files = [
-              'athens_meteogram.png',
-              'kiato_meteogram.png',
-              'lamia_meteogram.png',
-              'london_meteogram.png'
+              'athens{run_hour}.png',
+              'kiato{run_hour}.png',
+              'lamia{run_hour}.png',
+              'london.png'
           ]
 
           if not all([host, user, password]):
