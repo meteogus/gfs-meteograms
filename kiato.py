@@ -405,6 +405,8 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 
 
+run_hour = latest_run_time.strftime("%H")
+filename = f"kiato{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("kiato_meteogram.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
