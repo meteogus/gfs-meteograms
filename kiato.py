@@ -295,7 +295,6 @@ ax_wind.set_yticks(wind_ticks[1:])  # exclude first tick
 
 # Section 5: CAPE and Lifted Index
 ax_cape = axs[4]
-ax_cape.plot(times, cape, color='red', label='CAPE (J/kg)',zorder=5)
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
 ax_cape.tick_params(axis='y', labelcolor='black')
 
