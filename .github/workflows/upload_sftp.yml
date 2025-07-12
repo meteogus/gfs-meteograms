@@ -24,22 +24,25 @@ jobs:
           pip install -r requirements.txt
           pip install paramiko
 
-      # ✅ Set run_hour based on cron schedule
+      # ✅ Determine latest GFS run hour
       - name: Determine GFS run hour
         id: gfs_run
         run: |
           hour=$(date -u +"%H")
-          case "$hour" in
-            "01") run_hour="00" ;;
-            "07") run_hour="06" ;;
-            "13") run_hour="12" ;;
-            "19") run_hour="18" ;;
-            *) echo "❌ Unexpected cron hour: $hour" && exit 1 ;;
-          esac
-          echo "GFS run hour: $run_hour"
+          if ((hour >= 0 && hour < 6)); then
+              run_hour="00"
+          elif ((hour >= 6 && hour < 12)); then
+              run_hour="06"
+          elif ((hour >= 12 && hour < 18)); then
+              run_hour="12"
+          else
+              run_hour="18"
+          fi
+          echo "🕒 Current UTC hour: $hour"
+          echo "📦 Using GFS run hour: $run_hour"
           echo "run_hour=$run_hour" >> $GITHUB_ENV
 
-      # ✅ Run Python scripts with run_hour passed as ENV
+      # ✅ Run meteogram scripts
       - name: Run meteogram scripts
         run: |
           python athens.py
