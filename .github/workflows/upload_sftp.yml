@@ -1,9 +1,9 @@
 name: Run and Upload Meteograms via SFTP
 
 on:
-  schedule:
-    - cron: "0 3,6 * * *"  # At 03:00 and 06:00 UTC daily
-  workflow_dispatch:       # Allow manual trigger in GitHub
+schedule:
+  - cron: "0 0,6,12,18 * * *"  # Runs at 00, 06, 12, 18 UTC daily
+workflow_dispatch:       # Allow manual trigger in GitHub
 
 jobs:
   build-and-upload:
