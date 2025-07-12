@@ -24,13 +24,32 @@ jobs:
           pip install -r requirements.txt
           pip install paramiko
 
+      # ✅ Set run_hour based on cron schedule
+      - name: Determine GFS run hour
+        id: gfs_run
+        run: |
+          hour=$(date -u +"%H")
+          case "$hour" in
+            "01") run_hour="00" ;;
+            "07") run_hour="06" ;;
+            "13") run_hour="12" ;;
+            "19") run_hour="18" ;;
+            *) echo "❌ Unexpected cron hour: $hour" && exit 1 ;;
+          esac
+          echo "GFS run hour: $run_hour"
+          echo "run_hour=$run_hour" >> $GITHUB_ENV
+
+      # ✅ Run Python scripts with run_hour passed as ENV
       - name: Run meteogram scripts
         run: |
           python athens.py
           python kiato.py
           python lamia.py
           python london.py
+        env:
+          RUN_HOUR: ${{ env.run_hour }}
 
+      # ✅ Upload dynamically named files (athens/kiato/lamia) + static london.png
       - name: Upload images via SFTP with paramiko
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
@@ -38,27 +57,23 @@ jobs:
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
+          RUN_HOUR: ${{ env.run_hour }}
         run: |
           python - <<EOF
           import paramiko
           import os
           import sys
-          from datetime import datetime
 
-          # ✅ Derive run_hour from current UTC time (matches GFS cycle)
-          now = datetime.utcnow()
-          run_hour = f"{now.hour:02d}"  # e.g., "00", "06", "12", "18"
-          print(f"🕒 GFS run hour: {run_hour}")
+          run_hour = os.getenv('RUN_HOUR', '00')
+          print(f"🕒 Using run_hour: {run_hour}")
 
-          # ✅ Build dynamic filenames
           files = [
               f"athens{run_hour}.png",
               f"kiato{run_hour}.png",
               f"lamia{run_hour}.png",
-              f"london{run_hour}.png"
+              "london.png"  # static filename
           ]
 
-          # ✅ SFTP connection details
           host = os.getenv('SFTP_HOST')
           port = int(os.getenv('SFTP_PORT', '22'))
           user = os.getenv('SFTP_USER')
@@ -78,7 +93,6 @@ jobs:
               print(f"❌ Failed to connect or authenticate: {e}")
               sys.exit(1)
 
-          # ✅ Upload each meteogram
           for f in files:
               try:
                   local_path = f
