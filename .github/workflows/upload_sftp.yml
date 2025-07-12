@@ -3,7 +3,7 @@ name: Run and Upload Meteograms via SFTP
 on:
   schedule:
     - cron: "0 1,7,13,19 * * *"  # Runs at 01, 07, 13, 19 UTC daily
-  workflow_dispatch:  # Allow manual trigger in GitHub
+  workflow_dispatch:             # Allow manual trigger in GitHub
 
 jobs:
   build-and-upload:
@@ -43,41 +43,50 @@ jobs:
           import paramiko
           import os
           import sys
+          from datetime import datetime
 
+          # ✅ Derive run_hour from current UTC time (matches GFS cycle)
+          now = datetime.utcnow()
+          run_hour = f"{now.hour:02d}"  # e.g., "00", "06", "12", "18"
+          print(f"🕒 GFS run hour: {run_hour}")
+
+          # ✅ Build dynamic filenames
+          files = [
+              f"athens{run_hour}.png",
+              f"kiato{run_hour}.png",
+              f"lamia{run_hour}.png",
+              f"london{run_hour}.png"
+          ]
+
+          # ✅ SFTP connection details
           host = os.getenv('SFTP_HOST')
           port = int(os.getenv('SFTP_PORT', '22'))
           user = os.getenv('SFTP_USER')
           password = os.getenv('SFTP_PASS')
           folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
-          files = [
-              'athens{run_hour}.png',
-              'kiato{run_hour}.png',
-              'lamia{run_hour}.png',
-              'london.png'
-          ]
-
           if not all([host, user, password]):
-              print("Missing SFTP credentials")
+              print("❌ Missing SFTP credentials")
               sys.exit(1)
 
-          print(f"Connecting to {host}:{port} as {user}")
+          print(f"📡 Connecting to {host}:{port} as {user} ...")
           try:
               transport = paramiko.Transport((host, port))
               transport.connect(username=user, password=password)
               sftp = paramiko.SFTPClient.from_transport(transport)
           except Exception as e:
-              print(f"Failed to connect or authenticate: {e}")
+              print(f"❌ Failed to connect or authenticate: {e}")
               sys.exit(1)
 
+          # ✅ Upload each meteogram
           for f in files:
               try:
                   local_path = f
-                  remote_path = folder + '/' + f
-                  print(f"Uploading {local_path} to {remote_path} ...")
+                  remote_path = f"{folder}/{f}"
+                  print(f"⬆️ Uploading {local_path} to {remote_path} ...")
                   sftp.put(local_path, remote_path)
               except Exception as e:
-                  print(f"Failed to upload {f}: {e}")
+                  print(f"❌ Failed to upload {f}: {e}")
 
           sftp.close()
           transport.close()
