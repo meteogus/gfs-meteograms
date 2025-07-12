@@ -406,5 +406,5 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("london_meteogram.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
