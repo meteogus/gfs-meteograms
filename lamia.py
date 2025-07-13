@@ -249,16 +249,35 @@ ax_humidity.clabel(
 
 # Section 3: Precipitation
 ax_precip = axs[2]
-bar_width = (time_nums[1] - time_nums[0]) * 0.8
-ax_precip.bar(time_nums, rain, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
-ax_precip.bar(time_nums, showers, width=bar_width, color='#FA3C3C', alpha=1.0, label='Showers')
-ax_precip.bar(time_nums, snowfall, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
+bar_width = (time_nums[1] - time_nums[0]) * 2
+
+time_nums_3h = time_nums[::3]
+rain_3h = rain[::3]
+showers_3h = showers[::3]
+snowfall_3h = snowfall[::3]
+
+ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
+ax_precip.bar(time_nums_3h, showers_3h, width=bar_width, color='#FA3C3C', alpha=1.0, label='Showers')
+ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 ax_precip.set_ylabel('Precipitation\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
-ax_precip.set_ylim(0, 27)
-y_ticks = np.arange(0, 28, 5)
-ax_precip.set_yticks(y_ticks[1:])
+
+# Set Y-axis dynamically
+max_precip = max(np.max(rain_3h), np.max(showers_3h), np.max(snowfall_3h))
+if max_precip <= 10:
+    y_step = 2
+elif max_precip <= 30:
+    y_step = 5
+else:
+    y_step = 10
+
+y_max = np.ceil(max_precip + 2)  # add 2 mm margin
+y_max = y_step * np.ceil(y_max / y_step)  # round up to nearest step
+
+ax_precip.set_ylim(0, y_max)
+ax_precip.set_yticks(np.arange(0, y_max + y_step, y_step)[1:])
+
 
 
 # Section 4: Pressure & 10m Winds
