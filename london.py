@@ -75,6 +75,23 @@ params = {
     "models": "gfs_seamless"
 }
 
+max_retries = 5
+delay_seconds = 10
+
+for attempt in range(1, max_retries + 1):
+    try:
+        response = requests.get(url, params=params, timeout=30)  # add timeout to avoid hanging
+        response.raise_for_status()  # raise exception for HTTP errors
+        break  # success, exit retry loop
+    except (requests.exceptions.RequestException) as e:
+        print(f"Attempt {attempt} failed: {e}")
+        if attempt == max_retries:
+            print("Max retries reached. Exiting.")
+            raise  # or handle failure as you wish
+        else:
+            print(f"Retrying in {delay_seconds} seconds...")
+            time.sleep(delay_seconds)
+            
 response = requests.get(url, params=params)
 data = response.json()
 
