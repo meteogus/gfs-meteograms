@@ -7,6 +7,8 @@ import requests
 from matplotlib.ticker import FuncFormatter
 import matplotlib.ticker as ticker
 from datetime import datetime, timedelta, timezone
+import time
+
 
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
