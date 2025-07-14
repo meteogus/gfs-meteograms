@@ -66,7 +66,7 @@ params = {
         "winddirection_10m",
         "cape",
         "lifted_index",
-        "rain",            
+        "precipitation",            
         "showers",         
         "snowfall"         
     ]),
@@ -130,7 +130,7 @@ windspeed_10m = get_data('windspeed_10m')
 winddirection_10m = get_data('winddirection_10m')
 cape = get_data('cape')
 lifted_index = get_data('lifted_index')
-rain = get_data('rain')
+precipitation = get_data('precipitation')
 showers = get_data('showers')
 snowfall = get_data('snowfall')
 time_nums = mdates.date2num(times)
@@ -249,15 +249,16 @@ ax_humidity.clabel(
 
 # Section 3: Precipitation
 ax_precip = axs[2]
-bar_width = (time_nums[1] - time_nums[0]) * 2
+bar_width = (time_nums[1] - time_nums[0]) * 1.8
+bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
 time_nums_3h = time_nums[::3]
-rain_3h = rain[::3]
+rain_3h = precipitation[::3]
 showers_3h = showers[::3]
 snowfall_3h = snowfall[::3]
 
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
-ax_precip.bar(time_nums_3h, showers_3h, width=bar_width, color='#FA3C3C', alpha=1.0, label='Showers')
+ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 ax_precip.set_ylabel('Precipitation\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
