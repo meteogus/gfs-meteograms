@@ -7,6 +7,7 @@ import requests
 from matplotlib.ticker import FuncFormatter
 import matplotlib.ticker as ticker
 from datetime import datetime, timedelta, timezone
+import time
 
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
@@ -25,8 +26,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.90
-longitude = 22.43
+latitude = 38
+longitude = 24
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -68,7 +69,11 @@ params = {
         "lifted_index",
         "precipitation",            
         "showers",         
-        "snowfall"         
+        "snowfall",
+        "geopotential_height_1000hPa",
+        "geopotential_height_500hPa",
+        "geopotential_height_100hPa",
+        "freezing_level_height"
     ]),
     "forecast_days": 5,
     "timezone": "UTC",
@@ -80,33 +85,30 @@ delay_seconds = 10
 
 for attempt in range(1, max_retries + 1):
     try:
-        response = requests.get(url, params=params, timeout=30)  # add timeout to avoid hanging
-        response.raise_for_status()  # raise exception for HTTP errors
-        break  # success, exit retry loop
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        break
     except (requests.exceptions.RequestException) as e:
         print(f"Attempt {attempt} failed: {e}")
         if attempt == max_retries:
             print("Max retries reached. Exiting.")
-            raise  # or handle failure as you wish
+            raise
         else:
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
-            
+
 response = requests.get(url, params=params)
 data = response.json()
 
-# Forecast metadata
 first_forecast_time = pd.to_datetime(data['hourly']['time'][0])
 
-# FIXED: Use correct field for generation time
 if "generationtime_ms" in data:
     gfs_generation_time = latest_run_time
 else:
-    gfs_generation_time = latest_run_time  # fallback to latest_run_time
+    gfs_generation_time = latest_run_time
 
 print(f"GFS run: {gfs_generation_time:%Y-%m-%d %HZ}")
 
-# === Section 1: Clouds ===
 times_cloud = pd.to_datetime(data['hourly']['time'])
 cloud_low = np.array(data['hourly']['cloud_cover_low'])
 cloud_mid = np.array(data['hourly']['cloud_cover_mid'])
@@ -115,7 +117,6 @@ cloud_high = np.array(data['hourly']['cloud_cover_high'])
 time_nums_cloud = mdates.date2num(times_cloud)
 dt_cloud = time_nums_cloud[1] - time_nums_cloud[0] if len(time_nums_cloud) > 1 else 1
 
-# === Sections 2-5: Full data ===
 times = times_cloud.copy()
 pressure_levels = [1000, 950, 900, 850, 800, 750, 700, 650]
 
@@ -133,15 +134,24 @@ lifted_index = get_data('lifted_index')
 precipitation = get_data('precipitation')
 showers = get_data('showers')
 snowfall = get_data('snowfall')
+
+# New variables for DAM section
+geopotential_1000 = get_data("geopotential_height_1000hPa")
+geopotential_500 = get_data("geopotential_height_500hPa")
+geopotential_100 = get_data("geopotential_height_100hPa")
+freezing_level = get_data("freezing_level_height") 
+dam = (geopotential_500 - geopotential_1000) / 10  # convert to dam
+
 time_nums = mdates.date2num(times)
 
-# --- Plotting ---
 fig, axs = plt.subplots(
-    5, 1,
-    figsize=(1000 / 96, 780 / 96),
-    gridspec_kw={'height_ratios': [1, 2.5, 1.1, 1, 1]},
+    6, 1,
+    figsize=(1000 / 96, 900 / 96),
+    gridspec_kw={'height_ratios': [1, 2.5, 1.1, 1, 1, 1]},
     sharex=True
 )
+
+
 
 # Section 1: Clouds
 ax_cloud = axs[0]
@@ -280,7 +290,6 @@ ax_precip.set_ylim(0, y_max)
 ax_precip.set_yticks(np.arange(0, y_max + y_step, y_step)[1:])
 
 
-
 # Section 4: Pressure & 10m Winds
 ax_pressure = axs[3]
 ax_pressure.plot(times, pressure_msl, color='#00A0FF', linewidth=1, label='SLP (hPa)')
@@ -379,7 +388,8 @@ else:
     step = 400
 
 ax_cape.set_ylim(0, ymax)
-ax_cape.set_yticks(np.arange(0, ymax + 1, step))
+yticks = np.arange(step, ymax + 1, step)
+ax_cape.set_yticks(yticks)
 
 
 
@@ -388,39 +398,100 @@ ax_cape.set_yticks(np.arange(0, ymax + 1, step))
 ax_li.set_ylabel('Lifted index', fontsize=9, color='#F08228')
 ax_li.tick_params(axis='y', labelcolor='black')
 ax_li.set_ylim(0, -6)
-ax_li.set_yticks(np.arange(0, -8, -2))
+ax_li.set_yticks(np.arange(-2, -8, -2))
 
 
 
 
-# X-axis formatting
 
-# --- Adjust figure margins to avoid clipping ---
-fig.subplots_adjust(top=1.00, bottom=0.15)  # Add more space top & bottom
 
-# --- BOTTOM AXIS ---
-# Major ticks: 00Z and 12Z
+# Section 6: DAM and Freezing Level
+ax_dam = axs[5]
+ax_dam.plot(times, dam, color='red', linewidth=1.5, label='DAM (500–1000 hPa)')
+
+# Set DAM y-axis limits and ticks
+dam_min = min(dam)
+dam_max = max(dam)
+
+# Round limits to nearest multiple of 5
+dam_lower = np.floor((dam_min - 5) / 5) * 5
+dam_upper = np.ceil((dam_max + 5) / 5) * 5
+
+# Set y-limits and yticks
+ax_dam.set_ylim(dam_lower, dam_upper)
+ax_dam.set_yticks(np.arange(dam_lower, dam_upper + 1, 5))
+
+# Label and style
+ax_dam.set_ylabel("Z500-Z1000\n(dm)", fontsize=9, color='red')
+ax_dam.tick_params(axis='y', labelcolor='red')
+ax_dam.grid(which='both', axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+
+# Add freezing level on secondary y-axis
+ax_dam2 = ax_dam.twinx()
+ax_dam2.plot(times, freezing_level, color='blue', linestyle='--', linewidth=1.5, label='Freezing Level')
+
+# Set Freezing Level y-axis limits and ticks
+freeze_min = min(freezing_level)
+freeze_max = max(freezing_level)
+
+# Expand limits by ±100
+freeze_lower = np.floor((freeze_min - 100) / 100) * 100
+freeze_upper = np.ceil((freeze_max + 100) / 100) * 100
+
+# Determine step size based on range
+range_size = freeze_upper - freeze_lower
+if range_size <= 500:
+    step = 100
+elif range_size <= 1000:
+    step = 200
+else:
+    step = 400
+
+# Set y-limits
+ax_dam2.set_ylim(freeze_lower, freeze_upper)
+
+# Set yticks
+yticks_freeze = np.arange(freeze_lower, freeze_upper + step, step)
+ax_dam2.set_yticks(yticks_freeze)
+
+# Label and style
+ax_dam2.set_ylabel("Freezing level\n (m)", fontsize=9, color='blue')
+ax_dam2.tick_params(axis='y', labelcolor='blue')
+
+# Optional legend
+# lines1, labels1 = ax_dam.get_legend_handles_labels()
+# lines2, labels2 = ax_dam2.get_legend_handles_labels()
+# ax_dam2.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=8)
+
+
+
+
+
+
+
+
+# Adjust layout and X-axis formatting
+fig.subplots_adjust(top=1.00, bottom=0.15)
+
 axs[-1].xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 12]))
 axs[-1].xaxis.set_major_formatter(FuncFormatter(
     lambda x, pos: mdates.num2date(x).strftime('%HZ')
 ))
 axs[-1].tick_params(axis='x', which='major', labelsize=9, pad=5)
 
-# Add dates (e.g., 19JUL) BELOW the times at 00Z only
 ticks_00z = [t for t in mdates.date2num(times) if mdates.num2date(t).hour == 0]
 labels_00z = [mdates.num2date(t).strftime('%d%b').upper() for t in ticks_00z]
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
-        tick, -0.25,  # push dates further down
+        tick, -0.25,
         label, ha='center', va='top',
         transform=axs[-1].get_xaxis_transform(which='grid'),
         fontsize=10
     )
 
-# --- TOP AXIS ---
-# Add secondary X-axis for 00Z/12Z ticks
-ax_cloud_secondary_x = ax_cloud.secondary_xaxis('top')
+ax_cloud_secondary_x = axs[0].secondary_xaxis('top')
 ax_cloud_secondary_x.set_xticks(
     [t for t in mdates.date2num(times) if mdates.num2date(t).hour in [0, 12]]
 )
@@ -431,19 +502,14 @@ ax_cloud_secondary_x.set_xticklabels(
 )
 ax_cloud_secondary_x.tick_params(axis='x', which='major', pad=5)
 
-# Add dates (e.g., 19JUL) ABOVE the times at 00Z only
 for tick, label in zip(ticks_00z, labels_00z):
-    ax_cloud.text(
-        tick, 1.30,  # push dates further up
+    axs[0].text(
+        tick, 1.30,
         label, ha='center', va='bottom',
-        transform=ax_cloud.get_xaxis_transform(which='grid'),
+        transform=axs[0].get_xaxis_transform(which='grid'),
         fontsize=10
     )
 
-
-
-run_hour = latest_run_time.strftime("%H")
-filename = f"lamia{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
-plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig("lamia.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
