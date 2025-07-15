@@ -144,9 +144,10 @@ dam = (geopotential_500 - geopotential_1000) / 10  # convert to dam
 
 time_nums = mdates.date2num(times)
 
+# --- Plotting ---
 fig, axs = plt.subplots(
     6, 1,
-    figsize=(1200 / 120, 1000 / 120),
+    figsize=(1000 / 96, 780 / 96), # or 1200/120 and 1000/120
     gridspec_kw={'height_ratios': [1, 2.5, 1.1, 1, 1, 1]},
     sharex=True
 )
