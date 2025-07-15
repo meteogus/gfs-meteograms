@@ -26,8 +26,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.90
-longitude = 22.43
+latitude = 38
+longitude = 24
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -146,7 +146,7 @@ time_nums = mdates.date2num(times)
 
 fig, axs = plt.subplots(
     6, 1,
-    figsize=(1000 / 96, 900 / 96),
+    figsize=(1200 / 120, 1000 / 120),
     gridspec_kw={'height_ratios': [1, 2.5, 1.1, 1, 1, 1]},
     sharex=True
 )
@@ -235,7 +235,7 @@ for i, p in enumerate(pressure_levels):
         np.full(len(indices_3h), p),
         u, v,
         length=6,
-        linewidth=0.5
+        linewidth=0.3
     )
 
 # Add humidity contour lines
@@ -243,9 +243,10 @@ contour_lines = ax_humidity.contour(
     T, P, humidity,
     levels=bounds[1:],  # Skip first level to avoid lightest shade
     colors='black',
-    linewidths=0.8,
+    linewidths=0.4,
     linestyles='--'
 )
+
 
 # Label contours
 ax_humidity.clabel(
@@ -395,7 +396,7 @@ ax_cape.set_yticks(yticks)
 
 
 # Axes labels and ticks unchanged
-ax_li.set_ylabel('Lifted index', fontsize=9, color='#F08228')
+ax_li.set_ylabel('Lifted Index', fontsize=9, color='#F08228')
 ax_li.tick_params(axis='y', labelcolor='black')
 ax_li.set_ylim(0, -6)
 ax_li.set_yticks(np.arange(-2, -8, -2))
@@ -485,7 +486,7 @@ labels_00z = [mdates.num2date(t).strftime('%d%b').upper() for t in ticks_00z]
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
-        tick, -0.25,
+        tick, -0.3,
         label, ha='center', va='top',
         transform=axs[-1].get_xaxis_transform(which='grid'),
         fontsize=10
