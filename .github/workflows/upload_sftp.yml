@@ -1,34 +1,30 @@
-name: Trigger GitHub Meteogram Workflow
+name: Run and Upload Meteograms via SFTP
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-  repository_dispatch:
-    types: [run-meteograms]
+  workflow_dispatch:             # Allow manual trigger from GitHub UI
+  repository_dispatch:           # Allow external API trigger via POST
 
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ✅ Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: ✅ Set up Python 3.10
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: ✅ Install dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install paramiko
 
-      - name: ✅ Determine latest GFS run hour
+      # ✅ Determine latest GFS run hour
+      - name: Determine GFS run hour
         id: gfs_run
         run: |
           hour=$(date -u +"%H")
@@ -45,17 +41,18 @@ jobs:
           echo "📦 Using GFS run hour: $run_hour"
           echo "run_hour=$run_hour" >> $GITHUB_ENV
 
-      - name: ✅ Run meteogram scripts
+      # ✅ Run meteogram scripts
+      - name: Run meteogram scripts
         run: |
-          set +e  # 👈 continue even if a script fails
-          python athens.py || echo "⚠️ athens.py failed"
-          python kiato.py || echo "⚠️ kiato.py failed"
-          python lamia.py || echo "⚠️ lamia.py failed"
-          python london.py || echo "⚠️ london.py failed"
+          python athens.py
+          python kiato.py
+          python lamia.py
+          python london.py
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
-      - name: ✅ Upload images via SFTP with paramiko (with timeout)
+      # ✅ Upload dynamically named files (athens/kiato/lamia) + static london.png
+      - name: Upload images via SFTP with paramiko
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -63,18 +60,11 @@ jobs:
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
           RUN_HOUR: ${{ env.run_hour }}
-        timeout-minutes: 2 # ⏳ hard stop if this step runs >2 min
         run: |
-          if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USER" ] || [ -z "$SFTP_PASS" ]; then
-              echo "⚠️ SFTP credentials not set. Skipping upload step."
-              exit 0
-          fi
-
-          python - <<'EOF'
+          python - <<EOF
           import paramiko
           import os
           import sys
-          import socket
 
           run_hour = os.getenv('RUN_HOUR', '00')
           print(f"🕒 Using run_hour: {run_hour}")
@@ -92,11 +82,12 @@ jobs:
           password = os.getenv('SFTP_PASS')
           folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
-          print(f"📡 Connecting to {host}:{port} as {user} ...")
+          if not all([host, user, password]):
+              print("❌ Missing SFTP credentials")
+              sys.exit(1)
 
+          print(f"📡 Connecting to {host}:{port} as {user} ...")
           try:
-              # ⏳ set 10-second socket timeout
-              socket.setdefaulttimeout(10)
               transport = paramiko.Transport((host, port))
               transport.connect(username=user, password=password)
               sftp = paramiko.SFTPClient.from_transport(transport)
