@@ -54,7 +54,7 @@ jobs:
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
-      - name: ✅ Upload images via SFTP with paramiko
+      - name: ✅ Upload images via SFTP with paramiko (with timeout)
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -62,6 +62,7 @@ jobs:
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
           RUN_HOUR: ${{ env.run_hour }}
+        timeout-minutes: 2 # ⏳ hard stop if this step runs >2 min
         run: |
           if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USER" ] || [ -z "$SFTP_PASS" ]; then
               echo "⚠️ SFTP credentials not set. Skipping upload step."
@@ -72,6 +73,7 @@ jobs:
           import paramiko
           import os
           import sys
+          import socket
 
           run_hour = os.getenv('RUN_HOUR', '00')
           print(f"🕒 Using run_hour: {run_hour}")
@@ -90,7 +92,10 @@ jobs:
           folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
           print(f"📡 Connecting to {host}:{port} as {user} ...")
+
           try:
+              # ⏳ set 10-second socket timeout
+              socket.setdefaulttimeout(10)
               transport = paramiko.Transport((host, port))
               transport.connect(username=user, password=password)
               sftp = paramiko.SFTPClient.from_transport(transport)
