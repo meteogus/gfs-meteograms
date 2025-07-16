@@ -1,12 +1,12 @@
 name: Trigger GitHub Meteogram Workflow
 
 on:
-  push:                     # Run on every push to main
+  push:
     branches: [main]
-  pull_request:             # Run on pull requests targeting main
+  pull_request:
     branches: [main]
-  workflow_dispatch:        # Allow manual run from GitHub UI
-  repository_dispatch:      # Allow external API trigger
+  workflow_dispatch:
+  repository_dispatch:
     types: [run-meteograms]
 
 jobs:
@@ -55,7 +55,6 @@ jobs:
           RUN_HOUR: ${{ env.run_hour }}
 
       - name: ✅ Upload images via SFTP with paramiko
-        if: ${{ secrets.SFTP_HOST && secrets.SFTP_USER && secrets.SFTP_PASS }}
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -64,7 +63,12 @@ jobs:
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
           RUN_HOUR: ${{ env.run_hour }}
         run: |
-          python - <<EOF
+          if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USER" ] || [ -z "$SFTP_PASS" ]; then
+              echo "⚠️ SFTP credentials not set. Skipping upload step."
+              exit 0
+          fi
+
+          python - <<'EOF'
           import paramiko
           import os
           import sys
@@ -107,7 +111,3 @@ jobs:
           transport.close()
           print("✅ All files uploaded successfully.")
           EOF
-
-      - name: ⚠️ Skip upload if secrets missing
-        if: ${{ !secrets.SFTP_HOST }}
-        run: echo "⚠️ SFTP credentials not set. Skipping upload step."
