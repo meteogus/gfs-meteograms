@@ -1,8 +1,12 @@
 name: Trigger GitHub Meteogram Workflow
 
 on:
-  workflow_dispatch:             # Allow manual trigger from GitHub UI
-  repository_dispatch:           # Allow external API trigger via POST
+  push:
+    branches: [main]    # or the branch you care about
+  pull_request:
+    branches: [main]
+  workflow_dispatch:    # keep manual trigger
+  repository_dispatch:  # keep API trigger
     types: [run-meteograms]
 
 jobs:
