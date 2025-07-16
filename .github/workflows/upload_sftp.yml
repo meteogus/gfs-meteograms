@@ -47,10 +47,11 @@ jobs:
 
       - name: ✅ Run meteogram scripts
         run: |
-          python athens.py
-          python kiato.py
-          python lamia.py
-          python london.py
+          set +e  # 👈 continue even if a script fails
+          python athens.py || echo "⚠️ athens.py failed"
+          python kiato.py || echo "⚠️ kiato.py failed"
+          python lamia.py || echo "⚠️ lamia.py failed"
+          python london.py || echo "⚠️ london.py failed"
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
