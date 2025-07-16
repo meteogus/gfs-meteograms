@@ -1,8 +1,9 @@
-name: Run and Upload Meteograms via SFTP
+name: Trigger GitHub Meteogram Workflow
 
 on:
   workflow_dispatch:             # Allow manual trigger from GitHub UI
   repository_dispatch:           # Allow external API trigger via POST
+    types: [run-meteograms]
 
 jobs:
   build-and-upload:
