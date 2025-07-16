@@ -512,6 +512,8 @@ for tick, label in zip(ticks_00z, labels_00z):
         fontsize=10
     )
 
+run_hour = latest_run_time.strftime("%H")
+filename = f"lamia{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("lamia.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
