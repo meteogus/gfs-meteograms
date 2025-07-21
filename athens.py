@@ -73,7 +73,9 @@ params = {
         "geopotential_height_1000hPa",
         "geopotential_height_500hPa",
         "geopotential_height_100hPa",
-        "freezing_level_height"
+        "freezing_level_height",
+        "temperature_850hPa",
+        "temperature_500hPa"
     ]),
     "forecast_days": 5,
     "timezone": "UTC",
@@ -134,6 +136,8 @@ lifted_index = get_data('lifted_index')
 precipitation = get_data('precipitation')
 showers = get_data('showers')
 snowfall = get_data('snowfall')
+temperature_850 = get_data("temperature_850hPa")
+temperature_500 = get_data("temperature_500hPa")
 
 # New variables for DAM section
 geopotential_1000 = get_data("geopotential_height_1000hPa")
@@ -144,13 +148,30 @@ dam = (geopotential_500 - geopotential_1000) / 10  # convert to dam
 
 time_nums = mdates.date2num(times)
 
+
+
+
+
+
+
+
+
+
 # --- Plotting ---
 fig, axs = plt.subplots(
-    6, 1,
-    figsize=(1000 / 96, 780 / 96), # or 1200/120 and 1000/120
-    gridspec_kw={'height_ratios': [1, 2.5, 1.1, 1, 1, 1]},
+    8, 1,
+    figsize=(1000 / 96, 830 / 96), # or 1200/120 and 1000/120
+    gridspec_kw={'height_ratios': [1.2, 3, 0.7, 0.7, 1.5, 1, 1, 1]},
     sharex=True
 )
+
+
+
+
+
+
+
+
 
 
 
@@ -174,12 +195,26 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
                 alpha=1.0
             )
 
-ax_cloud.set_title(f"ATHENS Init: {latest_run_time:%Y-%m-%d} {latest_run_time:%HZ}",
-                   loc="center", fontsize=14, fontweight='bold', color='black', y=1.5)
+ax_cloud.set_title(f"ATHENS Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+                   loc="center", fontsize=14, fontweight='bold', color='black', y=1.7)
 
 ax_cloud.tick_params(axis='y', colors='black')
 ax_cloud.set_xlim(time_nums_cloud[0], time_nums_cloud[-1])
 ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -259,8 +294,147 @@ ax_humidity.clabel(
 
 
 
-# Section 3: Precipitation
-ax_precip = axs[2]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 3: Temperature 500 hPa
+ax_temp500 = axs[2]  
+
+# Plot temperature 500 hPa
+line1 = ax_temp500.plot(times, temperature_500, label='Temp 500 hPa (°C)', color='blue', linewidth=1.2)
+ax_temp500.set_ylabel('T500\n(°C)', fontsize=9, color='black')
+ax_temp500.tick_params(axis='y', labelcolor='black')
+
+# Set y-limits: adjusted min-1 and max+1
+t500_min = np.min(temperature_500)
+t500_max = np.max(temperature_500)
+t500_lower = int(np.floor(t500_min)) - 1
+t500_upper = int(np.ceil(t500_max)) + 1
+ax_temp500.set_ylim(t500_lower, t500_upper)
+
+# Remove y-ticks completely
+ax_temp500.set_yticks([])
+
+# Calculate horizontal offset: ~1/4 of time interval
+x_offset = (times[1] - times[0]) / 4
+
+# Add adaptive labels at every 6 hours (00Z, 06Z, 12Z, 18Z)
+for i, (t, temp) in enumerate(zip(times, temperature_500)):
+    if t.hour % 6 == 0:
+        # Decide if label goes above or below
+        if temp < (t500_lower + t500_upper) / 2:
+            y_pos = temp + 0.5
+            va = 'bottom'
+        else:
+            y_pos = temp - 0.5
+            va = 'top'
+        
+        # Adjust horizontal alignment for first and last points
+        if i == 0:
+            ax_temp500.text(t + x_offset, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='left', va=va)
+        elif i == len(times) - 1:
+            ax_temp500.text(t - x_offset, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='right', va=va)
+        else:
+            ax_temp500.text(t, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='center', va=va)
+        
+ax_temp500.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 4: Temperature 850 hPa
+ax_temp850 = axs[3]  # Assuming axs[3] is for T850
+
+# Plot temperature 850 hPa
+line2 = ax_temp850.plot(times, temperature_850, label='Temp 850 hPa (°C)', color='red', linewidth=1.2)
+ax_temp850.set_ylabel('T850\n(°C)', fontsize=9, color='black')
+ax_temp850.tick_params(axis='y', labelcolor='black')
+
+# Set y-limits: adjusted min-1 and max+1
+t850_min = np.min(temperature_850)
+t850_max = np.max(temperature_850)
+t850_lower = int(np.floor(t850_min)) - 1
+t850_upper = int(np.ceil(t850_max)) + 1
+ax_temp850.set_ylim(t850_lower, t850_upper)
+
+# Remove y-ticks completely
+ax_temp850.set_yticks([])
+
+# Calculate horizontal offset: ~1/4 of time interval
+x_offset = (times[1] - times[0]) / 4
+
+# Add adaptive labels at every 6 hours (00Z, 06Z, 12Z, 18Z)
+for i, (t, temp) in enumerate(zip(times, temperature_850)):
+    if t.hour % 6 == 0:
+        # Decide if label goes above or below
+        if temp < (t850_lower + t850_upper) / 2:
+            y_pos = temp + 0.5
+            va = 'bottom'
+        else:
+            y_pos = temp - 0.5
+            va = 'top'
+        
+        # Adjust horizontal alignment for first and last points
+        if i == 0:
+            ax_temp850.text(t + x_offset, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='left', va=va)
+        elif i == len(times) - 1:
+            ax_temp850.text(t - x_offset, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='right', va=va)
+        else:
+            ax_temp850.text(t, y_pos, f"{temp:.0f}",
+                            fontsize=8, color='black', ha='center', va=va)
+
+ax_temp850.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 5: Precipitation
+ax_precip = axs[4]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
@@ -272,7 +446,7 @@ snowfall_3h = snowfall[::3]
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
 ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
-ax_precip.set_ylabel('Precipitation\n(mm)', fontsize=9, color='black')
+ax_precip.set_ylabel('Precip.\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
@@ -292,29 +466,44 @@ ax_precip.set_ylim(0, y_max)
 ax_precip.set_yticks(np.arange(0, y_max + y_step, y_step)[1:])
 
 
-# Section 4: Pressure & 10m Winds
-ax_pressure = axs[3]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 6: Pressure & 10m Winds
+ax_pressure = axs[5]
 ax_pressure.plot(times, pressure_msl, color='#00A0FF', linewidth=1, label='SLP (hPa)')
 ax_pressure.set_ylabel('SLP\n(hPa)', fontsize=9, color='black')
 ax_pressure.tick_params(axis='y', labelcolor='black')
-ax_pressure.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+ax_pressure.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
 # Twin axis for windspeed
 ax_wind = ax_pressure.twinx()
 wind_knots = windspeed_10m * 0.539957
-ax_wind.plot(times, wind_knots, color='green', linestyle='--', linewidth=1.8)
-ax_wind.plot(times[::3], wind_knots[::3], marker='o', linestyle='None',
-             markerfacecolor='none', markeredgecolor='green', markersize=6)
-ax_wind.set_ylabel('Wind\n(knots)', fontsize=9, color='black')
-ax_wind.tick_params(axis='y', labelcolor='black')
-ax_wind.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# --- FIX: Plot wind barbs inside ax_pressure box ---
+# Disable y-ticks and labels for the wind axis
+ax_wind.set_yticks([])
+ax_wind.tick_params(axis='y', left=False, right=False, labelleft=False, labelright=False)
+
+# Plot wind barbs inside ax_pressure box
 u10 = -wind_knots * np.sin(np.deg2rad(winddirection_10m))
 v10 = -wind_knots * np.cos(np.deg2rad(winddirection_10m))
 
 # Choose a fixed Y position inside ax_pressure for all barbs
-barb_y = pressure_msl.min() + 5  # slightly above the min pressure
+barb_y = pressure_msl.min() + 2  # slightly above the min pressure
 ax_pressure.barbs(time_nums[::3], [barb_y] * len(time_nums[::3]), u10[::3], v10[::3],
                   length=6, linewidth=0.5, color='black', zorder=3)
 
@@ -326,14 +515,6 @@ ax_pressure.yaxis.set_major_locator(ticker.MultipleLocator(5))
 pressure_ticks = np.arange(p_min_rounded, p_max_rounded + 1, 5)
 ax_pressure.set_yticks(pressure_ticks[1:])  # exclude first tick
 
-# Set y-axis limits and ticks for windspeed
-wind_min = max(0, wind_knots.min() - 5)
-wind_max = wind_knots.max() + 5
-wind_min_floor = np.floor(wind_min)
-wind_max_ceil = np.ceil(wind_max)
-ax_wind.set_ylim(wind_min_floor, wind_max_ceil)
-wind_ticks = np.arange(wind_min_floor, wind_max_ceil + 1, 5)
-ax_wind.set_yticks(wind_ticks[1:])  # exclude first tick
 
 
 
@@ -341,8 +522,20 @@ ax_wind.set_yticks(wind_ticks[1:])  # exclude first tick
 
 
 
-# Section 5: CAPE and Lifted Index
-ax_cape = axs[4]
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 7: CAPE and Lifted Index
+ax_cape = axs[6]
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
 ax_cape.tick_params(axis='y', labelcolor='black')
 
@@ -376,7 +569,7 @@ ax_cape.patch.set_alpha(0)
 bars = ax_li.bar(neg_li_times, neg_li_values, color='#F08228', width=0.08, align='center', zorder=1)
 
 # Plot the red CAPE line with very high zorder on ax_cape (always on top)
-cape_line, = ax_cape.plot(times, cape, color='black', label='CAPE (J/kg)', zorder=10)
+cape_line, = ax_cape.plot(times, cape, color='black', linestyle='--',label='CAPE (J/kg)', zorder=10)
 
 # Other elements (grid, zero line)
 ax_cape.grid(axis='both', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.7, zorder=0)
@@ -394,11 +587,9 @@ yticks = np.arange(step, ymax + 1, step)
 ax_cape.set_yticks(yticks)
 
 
-
-
 # Axes labels and ticks unchanged
-ax_li.set_ylabel('Lifted Index', fontsize=9, color='#F08228')
-ax_li.tick_params(axis='y', labelcolor='black')
+ax_li.set_ylabel('Lifted\n index', fontsize=9, color='#F08228')
+ax_li.tick_params(axis='y', labelcolor='#F08228')
 ax_li.set_ylim(0, -6)
 ax_li.set_yticks(np.arange(-2, -8, -2))
 
@@ -407,8 +598,21 @@ ax_li.set_yticks(np.arange(-2, -8, -2))
 
 
 
-# Section 6: DAM and Freezing Level
-ax_dam = axs[5]
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 8: DAM and Freezing Level
+ax_dam = axs[7]
 ax_dam.plot(times, dam, color='red', linewidth=1.5, label='DAM (500–1000 hPa)')
 
 # Set DAM y-axis limits and ticks
@@ -416,8 +620,8 @@ dam_min = min(dam)
 dam_max = max(dam)
 
 # Round limits to nearest multiple of 5
-dam_lower = np.floor((dam_min - 5) / 5) * 5
-dam_upper = np.ceil((dam_max + 5) / 5) * 5
+dam_lower = 5 * np.floor(dam_min / 5)  
+dam_upper = 5 * np.ceil(dam_max / 5)
 
 # Set y-limits and yticks
 ax_dam.set_ylim(dam_lower, dam_upper)
@@ -429,42 +633,78 @@ ax_dam.tick_params(axis='y', labelcolor='red')
 ax_dam.grid(which='both', axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
 
+
 # Add freezing level on secondary y-axis
 ax_dam2 = ax_dam.twinx()
 ax_dam2.plot(times, freezing_level, color='blue', linestyle='--', linewidth=1.5, label='Freezing Level')
 
-# Set Freezing Level y-axis limits and ticks
+# Set Freezing Level y-axis limits and ticks in meters first
 freeze_min = min(freezing_level)
 freeze_max = max(freezing_level)
 
-# Expand limits by ±100
-freeze_lower = np.floor((freeze_min - 100) / 100) * 100
-freeze_upper = np.ceil((freeze_max + 100) / 100) * 100
+# Expand limits by ±50
+freeze_lower = np.floor((freeze_min - 50) / 100) * 100
+freeze_upper = np.ceil((freeze_max + 50) / 100) * 100
 
 # Determine step size based on range
 range_size = freeze_upper - freeze_lower
-if range_size <= 500:
-    step = 100
-elif range_size <= 1000:
-    step = 200
+if freeze_upper <= 500:
+    step_m = 100
+elif 500 < freeze_upper <= 1500:
+    step_m = 200
 else:
-    step = 400
+    step_m = 500
 
-# Set y-limits
+# Set y-limits in meters
 ax_dam2.set_ylim(freeze_lower, freeze_upper)
 
-# Set yticks
-yticks_freeze = np.arange(freeze_lower, freeze_upper + step, step)
-ax_dam2.set_yticks(yticks_freeze)
+# --- ✅ Set y-ticks in kilometers ---
+# Convert meters to km for ticks
+yticks_m = np.arange(freeze_lower, freeze_upper + step_m, step_m)
+yticks_km = yticks_m / 1000.0  # meters -> km
+ax_dam2.set_yticks(yticks_m)
+ax_dam2.set_yticklabels([f"{tick:.1f}" for tick in yticks_km])
 
 # Label and style
-ax_dam2.set_ylabel("Freezing level\n (m)", fontsize=9, color='blue')
+ax_dam2.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue')
 ax_dam2.tick_params(axis='y', labelcolor='blue')
 
-# Optional legend
-# lines1, labels1 = ax_dam.get_legend_handles_labels()
-# lines2, labels2 = ax_dam2.get_legend_handles_labels()
-# ax_dam2.legend(lines1 + lines2, labels1 + labels2, loc='upper right', fontsize=8)
+# --- ✅ Add labels every 6 hours in km ---
+for i, (t, fz) in enumerate(zip(times, freezing_level)):
+    if t.hour % 6 == 0:  # every 6 hours (00, 06, 12, 18 UTC)
+        # Convert meters to km and round to 1 decimal
+        fz_km = fz / 1000.0
+        label = f"{fz_km:.1f}"
+        
+        # Place label slightly above or below the line
+        if fz < (freeze_lower + freeze_upper) / 2:
+            y_pos = fz + 100  # above
+            va = 'bottom'
+        else:
+            y_pos = fz - 100  # below
+            va = 'top'
+        
+        # --- ✅ Keep first and last labels inside plot box ---
+        if i == 0:  # first value
+            ax_dam2.text(t + pd.Timedelta(hours=0.5), y_pos, label,  # shift slightly right
+                         fontsize=8, color='blue', ha='left', va=va)
+        elif i == len(times) - 1:  # last value
+            ax_dam2.text(t - pd.Timedelta(hours=0.5), y_pos, label,  # shift slightly left
+                         fontsize=8, color='blue', ha='right', va=va)
+        else:
+            ax_dam2.text(t, y_pos, label,
+                         fontsize=8, color='blue', ha='center', va=va)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -474,6 +714,7 @@ ax_dam2.tick_params(axis='y', labelcolor='blue')
 
 
 # Adjust layout and X-axis formatting
+
 fig.subplots_adjust(top=1.00, bottom=0.15)
 
 axs[-1].xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 12]))
@@ -487,7 +728,7 @@ labels_00z = [mdates.num2date(t).strftime('%d%b').upper() for t in ticks_00z]
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
-        tick, -0.3,
+        tick, -0.4,
         label, ha='center', va='top',
         transform=axs[-1].get_xaxis_transform(which='grid'),
         fontsize=10
@@ -506,7 +747,7 @@ ax_cloud_secondary_x.tick_params(axis='x', which='major', pad=5)
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[0].text(
-        tick, 1.30,
+        tick, 1.35,
         label, ha='center', va='bottom',
         transform=axs[0].get_xaxis_transform(which='grid'),
         fontsize=10
