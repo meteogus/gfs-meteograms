@@ -47,11 +47,14 @@ jobs:
           python athens.py
           python kiato.py
           python lamia.py
+          python patra.py
+          python salonica.py
+          python ikaria.py
           python london.py
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
-      # ✅ Upload dynamically named files (athens/kiato/lamia) + static london.png
+      # ✅ Upload dynamically named files + static (london.png)
       - name: Upload images via SFTP with paramiko
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
