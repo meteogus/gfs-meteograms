@@ -1,21 +1,7 @@
-# === Upload the generated image to your web server ===
-from ftplib import FTP
-
-# FTP credentials (replace with your real details)
-FTP_HOST = os.environ.get("FTP_HOST")         # e.g. ftp.example.com
-FTP_USER = os.environ.get("FTP_USER")         # e.g. parognosis_user
-FTP_PASS = os.environ.get("FTP_PASS")         # e.g. secretpassword
-FTP_FOLDER = os.environ.get("FTP_FOLDER")     # folder path on your server
-
-print("🌐 Connecting to FTP server...")
-ftp = FTP(FTP_HOST)
-ftp.login(FTP_USER, FTP_PASS)
-
-# Change to the target directory
-ftp.cwd(FTP_FOLDER)
-
-# Open the file and upload it
-with open("athens_meteogram.png", "rb") as file:
-    ftp.storbinary("STOR athens_meteogram.png", file)
-
-ftp.quit()
+# --- Plotting ---
+fig, axs = plt.subplots(
+    8, 1,
+    figsize=(1400 / 130, 1100 / 150), # or 1200/120 and 1000/120
+    gridspec_kw={'height_ratios': [1.2, 3, 0.7, 0.7, 1.5, 1, 1, 1]},
+    sharex=True
+)
