@@ -196,7 +196,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(f"KIATO Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
-                   loc="center", fontsize=14, fontweight='bold', color='black', y=1.7)
+                   loc="center", fontsize=14, fontweight='bold', color='black', y=1.9)
 
 ax_cloud.tick_params(axis='y', colors='black')
 ax_cloud.set_xlim(time_nums_cloud[0], time_nums_cloud[-1])
@@ -341,18 +341,24 @@ for i, (t, temp) in enumerate(zip(times, temperature_500)):
         else:
             y_pos = temp - 0.5
             va = 'top'
-        
+
+        # Box styling for 00Z times
+        if t.hour == 0:
+            bbox_props = dict(boxstyle="round,pad=0.3", fc="yellow", ec="black", lw=0.8, alpha=0.7)
+        else:
+            bbox_props = None
+
         # Adjust horizontal alignment for first and last points
         if i == 0:
             ax_temp500.text(t + x_offset, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='left', va=va)
+                            fontsize=8, color='black', ha='left', va=va, bbox=bbox_props)
         elif i == len(times) - 1:
             ax_temp500.text(t - x_offset, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='right', va=va)
+                            fontsize=8, color='black', ha='right', va=va, bbox=bbox_props)
         else:
             ax_temp500.text(t, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='center', va=va)
-        
+                            fontsize=8, color='black', ha='center', va=va, bbox=bbox_props)
+
 ax_temp500.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
 
@@ -398,17 +404,24 @@ for i, (t, temp) in enumerate(zip(times, temperature_850)):
         else:
             y_pos = temp - 0.5
             va = 'top'
-        
+
+        # Box styling for 00Z times
+        if t.hour == 0:
+            bbox_props = dict(boxstyle="round,pad=0.3", fc="yellow", ec="black", lw=0.8, alpha=0.7)
+        else:
+            bbox_props = None
+
         # Adjust horizontal alignment for first and last points
         if i == 0:
             ax_temp850.text(t + x_offset, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='left', va=va)
+                           fontsize=8, color='black', ha='left', va=va, bbox=bbox_props)
         elif i == len(times) - 1:
             ax_temp850.text(t - x_offset, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='right', va=va)
+                           fontsize=8, color='black', ha='right', va=va, bbox=bbox_props)
         else:
             ax_temp850.text(t, y_pos, f"{temp:.0f}",
-                            fontsize=8, color='black', ha='center', va=va)
+                           fontsize=8, color='black', ha='center', va=va, bbox=bbox_props)
+
 
 ax_temp850.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
@@ -613,7 +626,7 @@ ax_li.set_yticks(np.arange(-2, -8, -2))
 
 # Section 8: DAM and Freezing Level
 ax_dam = axs[7]
-ax_dam.plot(times, dam, color='red', linewidth=1.5, label='DAM (500–1000 hPa)')
+ax_dam.plot(times, dam, color='#CC5500', linewidth=1.5, label='DAM (500–1000 hPa)')
 
 # Set DAM y-axis limits and ticks
 dam_min = min(dam)
@@ -628,8 +641,8 @@ ax_dam.set_ylim(dam_lower, dam_upper)
 ax_dam.set_yticks(np.arange(dam_lower, dam_upper + 1, 5))
 
 # Label and style
-ax_dam.set_ylabel("Z500-Z1000\n(dm)", fontsize=9, color='red')
-ax_dam.tick_params(axis='y', labelcolor='red')
+ax_dam.set_ylabel("Z500-Z1000\n(dm)", fontsize=9, color='#CC5500')
+ax_dam.tick_params(axis='y', labelcolor='#CC5500')
 ax_dam.grid(which='both', axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
 
@@ -658,7 +671,7 @@ else:
 # Set y-limits in meters
 ax_dam2.set_ylim(freeze_lower, freeze_upper)
 
-# --- ? Set y-ticks in kilometers ---
+# --- Set y-ticks in kilometers ---
 # Convert meters to km for ticks
 yticks_m = np.arange(freeze_lower, freeze_upper + step_m, step_m)
 yticks_km = yticks_m / 1000.0  # meters -> km
@@ -669,31 +682,66 @@ ax_dam2.set_yticklabels([f"{tick:.1f}" for tick in yticks_km])
 ax_dam2.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue')
 ax_dam2.tick_params(axis='y', labelcolor='blue')
 
-# --- ? Add labels every 6 hours in km ---
+# --- Add labels every 6 hours in km ---
+# --- Set safety margins from plot borders ---
+top_margin = 0.05 * (freeze_upper - freeze_lower)  # 5% of y-range
+bottom_margin = 0.05 * (freeze_upper - freeze_lower)
+
 for i, (t, fz) in enumerate(zip(times, freezing_level)):
     if t.hour % 6 == 0:  # every 6 hours (00, 06, 12, 18 UTC)
-        # Convert meters to km and round to 1 decimal
         fz_km = fz / 1000.0
         label = f"{fz_km:.1f}"
-        
-        # Place label slightly above or below the line
-        if fz < (freeze_lower + freeze_upper) / 2:
-            y_pos = fz + 100  # above
+
+        # ✅ Shift horizontally for edge values
+        if i == 0:
+            t_shift = t + pd.Timedelta(hours=0.5)  # move slightly right inside
+            ha = 'left'
+        elif i == len(times) - 1:
+            t_shift = t - pd.Timedelta(hours=0.5)  # move slightly left inside
+            ha = 'right'
+        else:
+            t_shift = t
+            ha = 'center'
+
+        dam_val = dam[i]
+
+        # --- Determine available space above and below ---
+        space_above = freeze_upper - fz - top_margin
+        space_below = fz - freeze_lower - bottom_margin
+
+        # --- Try to place above if more space ---
+        if space_above > space_below:
+            dynamic_offset = space_above * 0.5  # midway up
+            y_pos = fz + dynamic_offset
             va = 'bottom'
         else:
-            y_pos = fz - 100  # below
+            dynamic_offset = space_below * 0.5  # midway down
+            y_pos = fz - dynamic_offset
             va = 'top'
-        
-        # --- ? Keep first and last labels inside plot box ---
-        if i == 0:  # first value
-            ax_dam2.text(t + pd.Timedelta(hours=0.5), y_pos, label,  # shift slightly right
-                         fontsize=8, color='blue', ha='left', va=va)
-        elif i == len(times) - 1:  # last value
-            ax_dam2.text(t - pd.Timedelta(hours=0.5), y_pos, label,  # shift slightly left
-                         fontsize=8, color='blue', ha='right', va=va)
-        else:
-            ax_dam2.text(t, y_pos, label,
-                         fontsize=8, color='blue', ha='center', va=va)
+
+        # --- Avoid overlap with dam line ---
+        clearance = 300  # meters
+        if abs(y_pos - dam_val) < clearance:
+            if y_pos > fz:
+                # Push further above
+                y_pos = fz + clearance
+                va = 'bottom'
+            else:
+                # Push further below
+                y_pos = fz - clearance
+                va = 'top'
+
+        # --- Clamp inside plot bounds ---
+        if y_pos > (freeze_upper - top_margin):
+            y_pos = freeze_upper - top_margin
+            va = 'top'
+        if y_pos < (freeze_lower + bottom_margin):
+            y_pos = freeze_lower + bottom_margin
+            va = 'bottom'
+
+        # Place text
+        ax_dam2.text(t_shift, y_pos, label,
+                     fontsize=8, color='blue', ha=ha, va=va)
 
 
 
@@ -753,6 +801,29 @@ for tick, label in zip(ticks_00z, labels_00z):
         fontsize=10
     )
 
+# --- NEW: Add day names (MON, TUE, etc.) above the date labels on top subplot ---
+
+day_labels = [mdates.num2date(t).strftime('%a').upper() for t in ticks_00z]
+
+for tick, day in zip(ticks_00z, day_labels):
+    axs[0].text(
+        tick, 1.55,        # Slightly above your date labels (which are at 1.35)
+        day,
+        ha='center', va='bottom',
+        transform=axs[0].get_xaxis_transform(which='grid'),
+        fontsize=9,
+        fontweight='bold',
+        color='black'       # <-- added this line
+    )
+
+
+
+
+
+
+
+
+# PLOT IMAGE
 run_hour = latest_run_time.strftime("%H")
 filename = f"kiato{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
