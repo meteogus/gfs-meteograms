@@ -76,6 +76,9 @@ jobs:
               f"athens{run_hour}.png",
               f"kiato{run_hour}.png",
               f"lamia{run_hour}.png",
+              f"patra{run_hour}.png",
+              f"salonica{run_hour}.png",
+              f"ikaria{run_hour}.png",
               "london.png"  # static filename
           ]
 
