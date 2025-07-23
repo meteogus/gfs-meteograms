@@ -72,7 +72,7 @@ params = {
         "snowfall",
         "geopotential_height_1000hPa",
         "geopotential_height_500hPa",
-        "geopotential_height_100hPa",
+        "geopotential_height_850hPa",
         "freezing_level_height",
         "temperature_850hPa",
         "temperature_500hPa"
@@ -139,12 +139,13 @@ snowfall = get_data('snowfall')
 temperature_850 = get_data("temperature_850hPa")
 temperature_500 = get_data("temperature_500hPa")
 
-# New variables for DAM section
+# New variables for Z500_1000 section
 geopotential_1000 = get_data("geopotential_height_1000hPa")
 geopotential_500 = get_data("geopotential_height_500hPa")
-geopotential_100 = get_data("geopotential_height_100hPa")
-freezing_level = get_data("freezing_level_height") 
-dam = (geopotential_500 - geopotential_1000) / 10  # convert to dam
+geopotential_850 = get_data("geopotential_height_850hPa")
+freezing_level = get_data("freezing_level_height") /1000
+Z500_1000 = (geopotential_500 - geopotential_1000) / 10  
+Z850_1000 = (geopotential_850 - geopotential_1000) / 10  
 
 time_nums = mdates.date2num(times)
 
@@ -243,9 +244,10 @@ cf = ax_humidity.contourf(
 ax_humidity.set_ylim(1000, 650)
 ax_humidity.set_yticks(pressure_levels)
 ax_humidity.set_yticklabels(
-    ["" if p == 1000 else str(p) for p in pressure_levels],
+    ["" if p in (1000, 650) else str(p) for p in pressure_levels],
     fontsize=9
 )
+
 
 # Add gridlines
 ax_humidity.grid(axis='x', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.8)
@@ -277,10 +279,11 @@ for i, p in enumerate(pressure_levels):
 # Add humidity contour lines
 contour_lines = ax_humidity.contour(
     T, P, humidity,
-    levels=bounds[1:],  # Skip first level to avoid lightest shade
-    colors='black',
-    linewidths=0.4,
-    linestyles='--'
+    levels=bounds[1:],            
+    colors='#92A9B6',
+    linewidths=1,              
+    linestyles='--',
+    alpha=0.7                    
 )
 
 
@@ -446,37 +449,68 @@ ax_temp850.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5),
 
 
 
-# Section 5: Precipitation
+# Section 5: Precipitation with Freezing Level values (every 6h, first inside section)
 ax_precip = axs[4]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
+# 3-hourly data
 time_nums_3h = time_nums[::3]
 rain_3h = precipitation[::3]
 showers_3h = showers[::3]
 snowfall_3h = snowfall[::3]
+freezing_3h = freezing_level[::3]
 
+# Plot precipitation bars
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
 ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
+
+# Plot Freezing level line
+# ax_frlabel = ax_precip.twinx()
+# ax_frlabel.plot(time_nums_3h, freezing_3h, color='#0072B2', linestyle='-', linewidth=0.7)
+# ax_frlabel.set_yticks([])
+
+# Y-axis setup
 ax_precip.set_ylabel('Precip.\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# Set Y-axis dynamically
 max_precip = max(np.max(rain_3h), np.max(showers_3h), np.max(snowfall_3h))
-if max_precip <= 10:
-    y_step = 2
-elif max_precip <= 30:
-    y_step = 5
-else:
-    y_step = 10
-
-y_max = np.ceil(max_precip + 2)  # add 2 mm margin
-y_max = y_step * np.ceil(y_max / y_step)  # round up to nearest step
-
+y_step = 2 if max_precip <= 10 else 5 if max_precip <= 30 else 10
+y_max = y_step * np.ceil((max_precip + 2) / y_step)
 ax_precip.set_ylim(0, y_max)
-ax_precip.set_yticks(np.arange(0, y_max + y_step, y_step)[1:])
+ax_precip.set_yticks(np.arange(y_step, y_max + y_step, y_step))
+
+# Right-side label for freezing level
+ax_frlabel = ax_precip.twinx()
+ax_frlabel.set_ylim(ax_precip.get_ylim())
+ax_frlabel.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue', rotation=90)
+ax_frlabel.yaxis.set_label_position("right")
+ax_frlabel.yaxis.tick_right()
+
+# Annotate freezing level every 6 hours if < 2 km
+offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
+for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
+    val = freezing_3h[i]
+    if val < 2.0: # Select minimum threshol to plot (km)
+        x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
+        ax_precip.text(
+            x, y_max - 0.5, f"{val:.1f}",
+            ha='center', va='top',
+            fontsize=9, color='blue',
+            #fontweight='bold',
+            bbox=dict(facecolor='white', edgecolor='none', alpha=0.7, pad=1.5)
+        )
+
+
+
+
+
+
+
+
+
 
 
 
@@ -526,7 +560,7 @@ p_max_rounded = int(np.ceil(pressure_msl.max() / 5.0) * 5)
 ax_pressure.set_ylim(p_min_rounded, p_max_rounded)
 ax_pressure.yaxis.set_major_locator(ticker.MultipleLocator(5))
 pressure_ticks = np.arange(p_min_rounded, p_max_rounded + 1, 5)
-ax_pressure.set_yticks(pressure_ticks[1:])  # exclude first tick
+ax_pressure.set_yticks(pressure_ticks[1:-1])  # exclude first tick
 
 
 
@@ -624,124 +658,83 @@ ax_li.set_yticks(np.arange(-2, -8, -2))
 
 
 
-# Section 8: DAM and Freezing Level
-ax_dam = axs[7]
-ax_dam.plot(times, dam, color='#CC5500', linewidth=1.5, label='DAM (500–1000 hPa)')
+# Section 8: Z500_1000 (left y-axis) and Z850_1000 (right y-axis)
+ax_Z500_1000 = axs[7]  # Base axis for Z500_1000
 
-# Set DAM y-axis limits and ticks
-dam_min = min(dam)
-dam_max = max(dam)
+# Plot Z500_1000 on primary y-axis (left)
+ax_Z500_1000.plot(
+    times, Z500_1000, 
+    color='purple', linewidth=1.5, label='Z500_1000 (500–1000 hPa)'
+)
 
-# Round limits to nearest multiple of 5
-dam_lower = 5 * np.floor(dam_min / 5)  
-dam_upper = 5 * np.ceil(dam_max / 5)
+# Set Z500_1000 y-axis limits and ticks
+Z500_1000_min = np.min(Z500_1000)
+Z500_1000_max = np.max(Z500_1000)
+Z500_1000_lower = 5 * np.floor(Z500_1000_min / 5)
+Z500_1000_upper = 5 * np.ceil(Z500_1000_max / 5)
+Z500_1000_ticks = np.arange(Z500_1000_lower, Z500_1000_upper + 1, 5)  # every 5 dm
 
-# Set y-limits and yticks
-ax_dam.set_ylim(dam_lower, dam_upper)
-ax_dam.set_yticks(np.arange(dam_lower, dam_upper + 1, 5))
+# Exclude first and last ticks
+if len(Z500_1000_ticks) > 2:
+    Z500_1000_ticks = Z500_1000_ticks[1:-1]
 
-# Label and style
-ax_dam.set_ylabel("Z500-Z1000\n(dm)", fontsize=9, color='#CC5500')
-ax_dam.tick_params(axis='y', labelcolor='#CC5500')
-ax_dam.grid(which='both', axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+ax_Z500_1000.set_ylim(Z500_1000_lower, Z500_1000_upper)
+ax_Z500_1000.set_yticks(Z500_1000_ticks)
+
+# Label and style for Z500_1000 axis (left)
+ax_Z500_1000.set_ylabel("Z500-Z1000\n(dm)", fontsize=9, color='purple')
+ax_Z500_1000.tick_params(axis='y', labelcolor='purple')
+ax_Z500_1000.yaxis.set_label_position("left")
+ax_Z500_1000.yaxis.tick_left()
+
+
+# Create secondary y-axis for Z850_1000 (right side)
+ax_Z850_1000 = ax_Z500_1000.twinx()
+
+# Plot Z850_1000 on right axis
+ax_Z850_1000.plot(
+    times, Z850_1000, 
+    color='green', linewidth=1.5, linestyle='--', label='Z850_1000 (850–1000 hPa)'
+)
+
+# Set Z850_1000 y-axis limits and ticks (every 2 dm)
+Z850_1000_min = np.min(Z850_1000)
+Z850_1000_max = np.max(Z850_1000)
+Z850_1000_lower = 2 * np.floor(Z850_1000_min / 2)
+Z850_1000_upper = 2 * np.ceil(Z850_1000_max / 2)
+Z850_1000_ticks = np.arange(Z850_1000_lower, Z850_1000_upper + 0.1, 2)
+
+# Exclude first and last ticks if more than 2
+if len(Z850_1000_ticks) > 2:
+    Z850_1000_ticks = Z850_1000_ticks[1:-1]
+
+ax_Z850_1000.set_ylim(Z850_1000_lower, Z850_1000_upper)
+ax_Z850_1000.set_yticks(Z850_1000_ticks)
+
+# Label and style for Z850_1000 axis (right)
+ax_Z850_1000.set_ylabel("Z850-Z1000\n(dm)", fontsize=9, color='green')
+ax_Z850_1000.tick_params(axis='y', labelcolor='green')
+ax_Z850_1000.yaxis.set_label_position("right")
+ax_Z850_1000.yaxis.tick_right()
+
+# Grid styling (only on primary axis)
+ax_Z500_1000.grid(
+    which='both', axis='both',
+    color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8
+)
 
 
 
-# Add freezing level on secondary y-axis
-ax_dam2 = ax_dam.twinx()
-ax_dam2.plot(times, freezing_level, color='blue', linestyle='--', linewidth=1.5, label='Freezing Level')
 
-# Set Freezing Level y-axis limits and ticks in meters first
-freeze_min = min(freezing_level)
-freeze_max = max(freezing_level)
 
-# Expand limits by ±50
-freeze_lower = np.floor((freeze_min - 50) / 100) * 100
-freeze_upper = np.ceil((freeze_max + 50) / 100) * 100
 
-# Determine step size based on range
-range_size = freeze_upper - freeze_lower
-if freeze_upper <= 500:
-    step_m = 100
-elif 500 < freeze_upper <= 1500:
-    step_m = 200
-else:
-    step_m = 500
 
-# Set y-limits in meters
-ax_dam2.set_ylim(freeze_lower, freeze_upper)
 
-# --- Set y-ticks in kilometers ---
-# Convert meters to km for ticks
-yticks_m = np.arange(freeze_lower, freeze_upper + step_m, step_m)
-yticks_km = yticks_m / 1000.0  # meters -> km
-ax_dam2.set_yticks(yticks_m)
-ax_dam2.set_yticklabels([f"{tick:.1f}" for tick in yticks_km])
 
-# Label and style
-ax_dam2.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue')
-ax_dam2.tick_params(axis='y', labelcolor='blue')
 
-# --- Add labels every 6 hours in km ---
-# --- Set safety margins from plot borders ---
-top_margin = 0.05 * (freeze_upper - freeze_lower)  # 5% of y-range
-bottom_margin = 0.05 * (freeze_upper - freeze_lower)
 
-for i, (t, fz) in enumerate(zip(times, freezing_level)):
-    if t.hour % 6 == 0:  # every 6 hours (00, 06, 12, 18 UTC)
-        fz_km = fz / 1000.0
-        label = f"{fz_km:.1f}"
 
-        # ✅ Shift horizontally for edge values
-        if i == 0:
-            t_shift = t + pd.Timedelta(hours=0.5)  # move slightly right inside
-            ha = 'left'
-        elif i == len(times) - 1:
-            t_shift = t - pd.Timedelta(hours=0.5)  # move slightly left inside
-            ha = 'right'
-        else:
-            t_shift = t
-            ha = 'center'
 
-        dam_val = dam[i]
-
-        # --- Determine available space above and below ---
-        space_above = freeze_upper - fz - top_margin
-        space_below = fz - freeze_lower - bottom_margin
-
-        # --- Try to place above if more space ---
-        if space_above > space_below:
-            dynamic_offset = space_above * 0.5  # midway up
-            y_pos = fz + dynamic_offset
-            va = 'bottom'
-        else:
-            dynamic_offset = space_below * 0.5  # midway down
-            y_pos = fz - dynamic_offset
-            va = 'top'
-
-        # --- Avoid overlap with dam line ---
-        clearance = 300  # meters
-        if abs(y_pos - dam_val) < clearance:
-            if y_pos > fz:
-                # Push further above
-                y_pos = fz + clearance
-                va = 'bottom'
-            else:
-                # Push further below
-                y_pos = fz - clearance
-                va = 'top'
-
-        # --- Clamp inside plot bounds ---
-        if y_pos > (freeze_upper - top_margin):
-            y_pos = freeze_upper - top_margin
-            va = 'top'
-        if y_pos < (freeze_lower + bottom_margin):
-            y_pos = freeze_lower + bottom_margin
-            va = 'bottom'
-
-        # Place text
-        ax_dam2.text(t_shift, y_pos, label,
-                     fontsize=8, color='blue', ha=ha, va=va)
 
 
 
@@ -815,6 +808,7 @@ for tick, day in zip(ticks_00z, day_labels):
         fontweight='bold',
         color='black'       # <-- added this line
     )
+
 
 
 
