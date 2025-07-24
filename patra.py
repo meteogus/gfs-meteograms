@@ -82,15 +82,20 @@ params = {
     "models": "gfs_seamless"
 }
 
-max_retries = 5
-delay_seconds = 10
 
+# Code that attempts to fetch data with a maximum total wait time of 15 minutes,
+# retrying every 60 seconds with a 30-second timeout per request.
+
+max_total_wait = 900
+delay_seconds = 60
+timeout_per_request = 30
+max_retries = max_total_wait // delay_seconds
 
 for attempt in range(1, max_retries + 1):
     try:
-        response = requests.get(url, params=params, timeout=30)
+        response = requests.get(url, params=params, timeout=timeout_per_request)
         response.raise_for_status()
-        data = response.json()  # ⬅️ Αμέσως μέσα στο try
+        data = response.json()
         break
     except (requests.exceptions.RequestException) as e:
         print(f"Attempt {attempt} failed: {e}")
@@ -101,18 +106,9 @@ for attempt in range(1, max_retries + 1):
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
 
-
-
-response = requests.get(url, params=params)
-data = response.json()
-
 first_forecast_time = pd.to_datetime(data['hourly']['time'][0])
 
-if "generationtime_ms" in data:
-    gfs_generation_time = latest_run_time
-else:
-    gfs_generation_time = latest_run_time
-
+gfs_generation_time = latest_run_time
 print(f"GFS run: {gfs_generation_time:%Y-%m-%d %HZ}")
 
 times_cloud = pd.to_datetime(data['hourly']['time'])
