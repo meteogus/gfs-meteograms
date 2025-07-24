@@ -103,6 +103,7 @@ for attempt in range(1, max_retries + 1):
 
 
 
+
 response = requests.get(url, params=params)
 data = response.json()
 
