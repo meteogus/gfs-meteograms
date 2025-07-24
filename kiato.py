@@ -100,8 +100,7 @@ for attempt in range(1, max_retries + 1):
         else:
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
-y_seconds} seconds...")
-            time.sleep(delay_seconds)
+
 
 
 response = requests.get(url, params=params)
