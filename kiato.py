@@ -85,10 +85,12 @@ params = {
 max_retries = 5
 delay_seconds = 10
 
+
 for attempt in range(1, max_retries + 1):
     try:
         response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
+        data = response.json()  # ⬅️ Αμέσως μέσα στο try
         break
     except (requests.exceptions.RequestException) as e:
         print(f"Attempt {attempt} failed: {e}")
@@ -98,6 +100,9 @@ for attempt in range(1, max_retries + 1):
         else:
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
+y_seconds} seconds...")
+            time.sleep(delay_seconds)
+
 
 response = requests.get(url, params=params)
 data = response.json()
