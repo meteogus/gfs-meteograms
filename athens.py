@@ -117,6 +117,7 @@ cloud_mid = np.array(data['hourly']['cloud_cover_mid'])
 cloud_high = np.array(data['hourly']['cloud_cover_high'])
 
 
+
 time_nums_cloud = mdates.date2num(times_cloud)
 dt_cloud = time_nums_cloud[1] - time_nums_cloud[0] if len(time_nums_cloud) > 1 else 1
 
