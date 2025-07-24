@@ -102,6 +102,7 @@ for attempt in range(1, max_retries + 1):
             time.sleep(delay_seconds)
 
 
+
 response = requests.get(url, params=params)
 data = response.json()
 
