@@ -105,20 +105,9 @@ for attempt in range(1, max_retries + 1):
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
 
-
-
-
-
-response = requests.get(url, params=params)
-data = response.json()
-
 first_forecast_time = pd.to_datetime(data['hourly']['time'][0])
 
-if "generationtime_ms" in data:
-    gfs_generation_time = latest_run_time
-else:
-    gfs_generation_time = latest_run_time
-
+gfs_generation_time = latest_run_time
 print(f"GFS run: {gfs_generation_time:%Y-%m-%d %HZ}")
 
 times_cloud = pd.to_datetime(data['hourly']['time'])
