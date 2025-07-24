@@ -282,10 +282,9 @@ for i, p in enumerate(pressure_levels):
 contour_lines = ax_humidity.contour(
     T, P, humidity,
     levels=bounds[1:],            
-    colors='#92A9B6',
-    linewidths=1,              
-    linestyles='--',
-    alpha=0.7                    
+    colors='grey',
+    linewidths=1,                
+    linestyles='--',                
 )
 
 
@@ -294,8 +293,11 @@ ax_humidity.clabel(
     contour_lines,
     fmt='%d',
     fontsize=8,
-    inline=True
+    inline=True,
+    colors='#333333',
 )
+
+
 
 
 
