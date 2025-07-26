@@ -912,5 +912,5 @@ for tick, day in zip(ticks_00z, day_labels):
 
 # PLOT IMAGE
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig("london.png", dpi=120, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
