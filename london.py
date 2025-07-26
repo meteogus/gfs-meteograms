@@ -1,13 +1,19 @@
 import numpy as np
+import pandas as pd
+import requests
+import time
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
-import pandas as pd
-import requests
-from matplotlib.ticker import FuncFormatter
 import matplotlib.ticker as ticker
+from matplotlib.ticker import FuncFormatter
+
 from datetime import datetime, timedelta, timezone
-import time
+from collections import defaultdict
+
+
+
 
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
@@ -64,6 +70,7 @@ params = {
         "winddirection_650hPa",
         "pressure_msl",
         "windspeed_10m",
+        "wind_gusts_10m", 
         "winddirection_10m",
         "cape",
         "lifted_index",
@@ -81,6 +88,7 @@ params = {
     "timezone": "UTC",
     "models": "gfs_seamless"
 }
+
 
 # Code that attempts to fetch data with a maximum total wait time of 15 minutes,
 # retrying every 60 seconds with a 30-second timeout per request.
@@ -115,6 +123,8 @@ cloud_low = np.array(data['hourly']['cloud_cover_low'])
 cloud_mid = np.array(data['hourly']['cloud_cover_mid'])
 cloud_high = np.array(data['hourly']['cloud_cover_high'])
 
+
+
 time_nums_cloud = mdates.date2num(times_cloud)
 dt_cloud = time_nums_cloud[1] - time_nums_cloud[0] if len(time_nums_cloud) > 1 else 1
 
@@ -137,8 +147,9 @@ showers = get_data('showers')
 snowfall = get_data('snowfall')
 temperature_850 = get_data("temperature_850hPa")
 temperature_500 = get_data("temperature_500hPa")
+wind_gusts_10m = get_data("wind_gusts_10m")
 
-# New variables for Z500_1000 section
+# New variables 
 geopotential_1000 = get_data("geopotential_height_1000hPa")
 geopotential_500 = get_data("geopotential_height_500hPa")
 geopotential_850 = get_data("geopotential_height_850hPa")
@@ -159,9 +170,9 @@ time_nums = mdates.date2num(times)
 
 # --- Plotting ---
 fig, axs = plt.subplots(
-    8, 1,
-    figsize=(1000 / 96, 830 / 96), # or 1200/120 and 1000/120
-    gridspec_kw={'height_ratios': [1.2, 3, 0.7, 0.7, 1.5, 1, 1, 1]},
+    9, 1,
+    figsize=(1750 / 160, 1450 / 160), 
+    gridspec_kw={'height_ratios': [1.2, 3.2, 0.7, 0.7, 1.5, 0.8, 1, 1, 1]},
     sharex=True
 )
 
@@ -440,16 +451,6 @@ ax_temp850.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5),
 
 
 
-
-
-
-
-
-
-
-
-
-
 # Section 5: Precipitation with Freezing Level values (every 6h, first inside section)
 ax_precip = axs[4]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
@@ -494,7 +495,7 @@ ax_frlabel.yaxis.tick_right()
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
 for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
     val = freezing_3h[i]
-    if val < 2.0: # Select minimum threshol to plot (km)
+    if val < 2.0: # Select minimum threshold to plot (km)
         x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
         ax_precip.text(
             x, y_max - 0.5, f"{val:.1f}",
@@ -526,34 +527,14 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-
-
-
-
-
-# Section 6: Pressure & 10m Winds
+# Section 6: Pressure 
 ax_pressure = axs[5]
+
+# Plot sea level pressure (SLP)
 ax_pressure.plot(times, pressure_msl, color='#00A0FF', linewidth=1, label='SLP (hPa)')
 ax_pressure.set_ylabel('SLP\n(hPa)', fontsize=9, color='black')
 ax_pressure.tick_params(axis='y', labelcolor='black')
 ax_pressure.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
-
-# Twin axis for windspeed
-ax_wind = ax_pressure.twinx()
-wind_knots = windspeed_10m * 0.539957
-
-# Disable y-ticks and labels for the wind axis
-ax_wind.set_yticks([])
-ax_wind.tick_params(axis='y', left=False, right=False, labelleft=False, labelright=False)
-
-# Plot wind barbs inside ax_pressure box
-u10 = -wind_knots * np.sin(np.deg2rad(winddirection_10m))
-v10 = -wind_knots * np.cos(np.deg2rad(winddirection_10m))
-
-# Choose a fixed Y position inside ax_pressure for all barbs
-barb_y = pressure_msl.min() + 2  # slightly above the min pressure
-ax_pressure.barbs(time_nums[::3], [barb_y] * len(time_nums[::3]), u10[::3], v10[::3],
-                  length=6, linewidth=0.5, color='black', zorder=3)
 
 # Set y-axis limits and ticks for pressure
 p_min_rounded = int(np.floor(pressure_msl.min() / 5.0) * 5)
@@ -582,8 +563,117 @@ ax_pressure.set_yticks(pressure_ticks[1:-1])  # exclude first tick
 
 
 
-# Section 7: CAPE and Lifted Index
-ax_cape = axs[6]
+
+
+
+# Section 7: Wind Gusts 10m + Wind Barbs for Windspeed/Direction
+ax_windgust = axs[6]  
+
+# wind_gusts_10m 
+# Plot wind gusts as solid line
+ax_windgust.plot(times, wind_gusts_10m, color='orange', linewidth=1.5, label='Wind Gust (km/h)')
+
+ax_windgust.set_ylabel('Gusts\n(km/h)', fontsize=9, color='black')
+ax_windgust.tick_params(axis='y', labelcolor='black')
+ax_windgust.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+# Set y-axis limits with padding +/- 5, min clipped at 0
+gust_min = np.min(wind_gusts_10m)
+gust_max = np.max(wind_gusts_10m)
+ymin = max(0, gust_min - 5)
+ymax = gust_max + 10
+ax_windgust.set_ylim(ymin, ymax)
+ax_windgust.set_yticks(np.arange(ymin, ymax, 20))
+
+# Plot wind barbs for windspeed_10m & winddirection_10m (NOT gusts)
+wind_knots = windspeed_10m * 0.539957
+u10 = -wind_knots * np.sin(np.deg2rad(winddirection_10m))
+v10 = -wind_knots * np.cos(np.deg2rad(winddirection_10m))
+
+# Place barbs vertically centered between 40%-60% of y-axis range
+barb_y = ymin + 0.5 * (ymax - ymin)
+time_nums = mdates.date2num(times)
+ax_windgust.barbs(time_nums[::3], [barb_y] * len(time_nums[::3]), u10[::3], v10[::3],
+                  length=6, linewidth=0.5, color='black', zorder=3)
+
+# Find daily max gusts for labeling
+daily_max = {}
+
+for t, gust in zip(times, wind_gusts_10m):
+    day = t.date()
+    if day not in daily_max or gust > daily_max[day]['value']:
+        daily_max[day] = {'value': gust, 'time': t}
+
+
+
+# Add boxes with daily max gust values 
+for day, info in daily_max.items():
+    label_time = pd.Timestamp(info['time'])
+    label_val = info['value']
+
+    y_min, y_max = ax_windgust.get_ylim()
+
+    y_offset = 2  # vertical offset for label
+
+    # Try placing label above the line
+    text_y = label_val + y_offset
+    va = 'bottom'
+
+    # If above the top axis limit, put label below the line
+    if text_y > y_max:
+        text_y = label_val - y_offset
+        va = 'top'
+
+    # Horizontal alignment logic (same as before)
+    i = times.get_indexer([label_time])[0]
+    if i == 0:
+        ha = 'left'
+        x_offset = (times[1] - times[0]) / 4
+        text_x = label_time + x_offset
+    elif i == len(times) - 1:
+        ha = 'right'
+        x_offset = (times[-1] - times[-2]) / 4
+        text_x = label_time - x_offset
+    else:
+        ha = 'center'
+        text_x = label_time
+
+    bbox_props = dict(boxstyle="round,pad=0.3", fc="#FFD8A6", ec="black", lw=0.8, alpha=0.8)
+
+    ax_windgust.text(text_x, text_y, f"{label_val:.0f}", fontsize=8,
+                     color='black', ha=ha, va=va, bbox=bbox_props)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Section 8: CAPE and Lifted Index
+ax_cape = axs[7]
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
 ax_cape.tick_params(axis='y', labelcolor='black')
 
@@ -603,8 +693,6 @@ for t, v in zip(li_times, li_values):
         neg_li_values.append(v)
 
 ax_li = ax_cape.twinx()
-
-
 
 # Bars axis below CAPE axis
 ax_li.set_zorder(1)            # Bars axis lower
@@ -632,6 +720,8 @@ else:
 
 ax_cape.set_ylim(0, ymax)
 yticks = np.arange(step, ymax + 1, step)
+if len(yticks) > 1:
+    yticks = yticks[:-1]  # exclude last ytick
 ax_cape.set_yticks(yticks)
 
 
@@ -659,8 +749,8 @@ ax_li.set_yticks(np.arange(-2, -8, -2))
 
 
 
-# Section 8: Z500_1000 (left y-axis) and Z850_1000 (right y-axis)
-ax_Z500_1000 = axs[7]  # Base axis for Z500_1000
+# Section 9: Z500_1000 (left y-axis) and Z850_1000 (right y-axis)
+ax_Z500_1000 = axs[8]  # Base axis for Z500_1000
 
 # Plot Z500_1000 on primary y-axis (left)
 ax_Z500_1000.plot(
@@ -676,8 +766,8 @@ Z500_1000_upper = 5 * np.ceil(Z500_1000_max / 5)
 Z500_1000_ticks = np.arange(Z500_1000_lower, Z500_1000_upper + 1, 5)  # every 5 dm
 
 # Exclude first and last ticks
-if len(Z500_1000_ticks) > 2:
-    Z500_1000_ticks = Z500_1000_ticks[1:-1]
+if len(Z500_1000_ticks) > 1:
+    Z500_1000_ticks = Z500_1000_ticks[:-1]
 
 ax_Z500_1000.set_ylim(Z500_1000_lower, Z500_1000_upper)
 ax_Z500_1000.set_yticks(Z500_1000_ticks)
@@ -698,16 +788,16 @@ ax_Z850_1000.plot(
     color='green', linewidth=1.5, linestyle='--', label='Z850_1000 (850–1000 hPa)'
 )
 
-# Set Z850_1000 y-axis limits and ticks (every 2 dm)
+# Set Z850_1000 y-axis limits and ticks 
 Z850_1000_min = np.min(Z850_1000)
 Z850_1000_max = np.max(Z850_1000)
 Z850_1000_lower = 2 * np.floor(Z850_1000_min / 2)
 Z850_1000_upper = 2 * np.ceil(Z850_1000_max / 2)
-Z850_1000_ticks = np.arange(Z850_1000_lower, Z850_1000_upper + 0.1, 2)
+Z850_1000_ticks = np.arange(Z850_1000_lower, Z850_1000_upper + 0.1, 2) # every n dm (n=last number)
 
-# Exclude first and last ticks if more than 2
-if len(Z850_1000_ticks) > 2:
-    Z850_1000_ticks = Z850_1000_ticks[1:-1]
+# Exclude last tick 
+if len(Z850_1000_ticks) > 1:
+    Z850_1000_ticks = Z850_1000_ticks[:-1]
 
 ax_Z850_1000.set_ylim(Z850_1000_lower, Z850_1000_upper)
 ax_Z850_1000.set_yticks(Z850_1000_ticks)
@@ -809,6 +899,8 @@ for tick, day in zip(ticks_00z, day_labels):
         fontweight='bold',
         color='black'       # <-- added this line
     )
+
+
 
 
 
