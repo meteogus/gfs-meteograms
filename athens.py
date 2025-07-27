@@ -171,7 +171,7 @@ time_nums = mdates.date2num(times)
 # --- Plotting ---
 fig, axs = plt.subplots(
     9, 1,
-    figsize=(1000 / 96, 830 / 96), 
+    figsize=(1000 / 96, 870 / 96), 
     gridspec_kw={'height_ratios': [1.2, 3.2, 0.7, 0.7, 1.5, 0.8, 1, 1, 1]},
     sharex=True
 )
