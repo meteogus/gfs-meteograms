@@ -611,6 +611,9 @@ for day, info in daily_max.items():
     label_time = pd.Timestamp(info['time'])
     label_val = info['value']
 
+    # Calculate wind_gusts_10m_bft and round element-wise
+    wind_gusts_10m_bft = np.round((label_val / 3.01) ** 0.66).astype(int)  # Round and convert to integer
+
     y_min, y_max = ax_windgust.get_ylim()
 
     y_offset = 2  # vertical offset for label
@@ -638,10 +641,17 @@ for day, info in daily_max.items():
         ha = 'center'
         text_x = label_time
 
+    # Adding both max value and wind_gusts_10m_bft to the text label
     bbox_props = dict(boxstyle="round,pad=0.3", fc="#FFD8A6", ec="black", lw=0.8, alpha=0.8)
 
-    ax_windgust.text(text_x, text_y, f"{label_val:.0f}", fontsize=8,
+    # Corrected text label with "b" (without space)
+    ax_windgust.text(text_x, text_y, f"{label_val:.0f}\n({wind_gusts_10m_bft}b)", fontsize=8,
                      color='black', ha=ha, va=va, bbox=bbox_props)
+
+
+
+
+
 
 
 
