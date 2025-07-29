@@ -606,29 +606,50 @@ for t, gust in zip(times, wind_gusts_10m):
 
 
 
-# Add boxes with daily max gust values 
+# Add boxes with daily max gust values (only for values >= 20 km/h)
 for day, info in daily_max.items():
     label_time = pd.Timestamp(info['time'])
     label_val = info['value']
 
-    # Calculate wind_gusts_10m_bft and round element-wise
-    wind_gusts_10m_bft = np.round((label_val / 3.01) ** 0.66).astype(int)  # Round and convert to integer
+    if label_val < 20:
+        continue  # skip values below 20 km/h
 
+    label_val_int = int(round(label_val))
     y_min, y_max = ax_windgust.get_ylim()
 
-    y_offset = 2  # vertical offset for label
-
-    # Try placing label above the line
-    text_y = label_val + y_offset
-    va = 'bottom'
-
-    # If above the top axis limit, put label below the line
-    if text_y > y_max:
-        text_y = label_val - y_offset
-        va = 'top'
-
-    # Horizontal alignment logic (same as before)
     i = times.get_indexer([label_time])[0]
+    wind_dir_at_label = winddirection_10m[i]
+
+    base_offset = 4
+    if (0 <= wind_dir_at_label <= 90) or (270 <= wind_dir_at_label <= 360):
+        margin = 10
+    else:
+        margin = 5
+
+    # Calculate y position for the box so it does not touch the line
+    if (0 <= wind_dir_at_label <= 90) or (270 <= wind_dir_at_label <= 360):
+        # Box below the line
+        text_y = label_val - base_offset
+        va = 'top'
+        if (label_val - text_y) < margin:
+            text_y = label_val - margin - 0.5
+        if text_y < y_min:
+            text_y = y_min + margin
+    else:
+        # Box above the line
+        text_y = label_val + base_offset
+        va = 'bottom'
+        if (text_y - label_val) < margin:
+            text_y = label_val + margin + 0.5
+        if text_y > y_max:
+            text_y = label_val - base_offset
+            va = 'top'
+            if (label_val - text_y) < margin:
+                text_y = label_val - margin - 0.5
+            if text_y < y_min:
+                text_y = y_min + margin
+
+    # Horizontal alignment
     if i == 0:
         ha = 'left'
         x_offset = (times[1] - times[0]) / 4
@@ -641,11 +662,17 @@ for day, info in daily_max.items():
         ha = 'center'
         text_x = label_time
 
-    # Adding both max value and wind_gusts_10m_bft to the text label
-    bbox_props = dict(boxstyle="round,pad=0.3", fc="#FFD8A6", ec="black", lw=0.8, alpha=0.8)
+    # Box color based on gust value
+    if 20 <= label_val_int <= 28:
+        fc_color = 'lightgreen'
+    elif 29 <= label_val_int <= 38:
+        fc_color = 'yellow'
+    else:
+        fc_color = '#FFD8A6'
 
-    # Corrected text label with "b" (without space)
-    ax_windgust.text(text_x, text_y, f"{label_val:.0f}\n({wind_gusts_10m_bft}b)", fontsize=8,
+    bbox_props = dict(boxstyle="round,pad=0.3", fc=fc_color, ec="black", lw=0.8, alpha=0.8)
+
+    ax_windgust.text(text_x, text_y, f"{label_val:.0f}", fontsize=8,
                      color='black', ha=ha, va=va, bbox=bbox_props)
 
 
