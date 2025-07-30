@@ -12,9 +12,6 @@ from matplotlib.ticker import FuncFormatter
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
-
-
-
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
 
@@ -84,14 +81,10 @@ params = {
         "temperature_850hPa",
         "temperature_500hPa"
     ]),
-    "forecast_days": 5,
+    "forecast_days": 6,
     "timezone": "UTC",
     "models": "gfs_seamless"
 }
-
-
-# Code that attempts to fetch data with a maximum total wait time of 15 minutes,
-# retrying every 60 seconds with a 30-second timeout per request.
 
 max_total_wait = 900
 delay_seconds = 60
@@ -113,22 +106,11 @@ for attempt in range(1, max_retries + 1):
             print(f"Retrying in {delay_seconds} seconds...")
             time.sleep(delay_seconds)
 
-first_forecast_time = pd.to_datetime(data['hourly']['time'][0])
-
-gfs_generation_time = latest_run_time
-print(f"GFS run: {gfs_generation_time:%Y-%m-%d %HZ}")
-
-times_cloud = pd.to_datetime(data['hourly']['time'])
+times_cloud = pd.to_datetime(data['hourly']['time']).tz_localize('UTC')
 cloud_low = np.array(data['hourly']['cloud_cover_low'])
 cloud_mid = np.array(data['hourly']['cloud_cover_mid'])
 cloud_high = np.array(data['hourly']['cloud_cover_high'])
 
-
-
-time_nums_cloud = mdates.date2num(times_cloud)
-dt_cloud = time_nums_cloud[1] - time_nums_cloud[0] if len(time_nums_cloud) > 1 else 1
-
-times = times_cloud.copy()
 pressure_levels = [1000, 950, 900, 850, 800, 750, 700, 650]
 
 def get_data(name):
@@ -149,15 +131,84 @@ temperature_850 = get_data("temperature_850hPa")
 temperature_500 = get_data("temperature_500hPa")
 wind_gusts_10m = get_data("wind_gusts_10m")
 
-# New variables 
 geopotential_1000 = get_data("geopotential_height_1000hPa")
 geopotential_500 = get_data("geopotential_height_500hPa")
 geopotential_850 = get_data("geopotential_height_850hPa")
-freezing_level = get_data("freezing_level_height") /1000
-Z500_1000 = (geopotential_500 - geopotential_1000) / 10  
-Z850_1000 = (geopotential_850 - geopotential_1000) / 10  
+freezing_level = get_data("freezing_level_height") / 1000
+Z500_1000 = (geopotential_500 - geopotential_1000) / 10
+Z850_1000 = (geopotential_850 - geopotential_1000) / 10
 
+
+
+
+
+
+
+
+
+
+
+
+
+from datetime import timedelta
+
+# --- FILTER DATA FROM GFS RUN TIME ONWARD (exactly 5 days = 120 hours) ---
+
+start_time = latest_run_time
+start_index = np.where(times_cloud >= start_time)[0][0]
+
+# Calculate end_index as start_index + 120 (for 120 hours, assuming hourly data)
+end_index = start_index + 120
+
+# Prevent going beyond array length
+if end_index >= len(times_cloud):
+    end_index = len(times_cloud) - 1
+
+# Slice times and recalc numeric times for matplotlib
+times = times_cloud[start_index:end_index + 1]
 time_nums = mdates.date2num(times)
+
+# Slice cloud layers
+cloud_low = cloud_low[start_index:end_index + 1]
+cloud_mid = cloud_mid[start_index:end_index + 1]
+cloud_high = cloud_high[start_index:end_index + 1]
+
+# Slice atmospheric profiles (pressure_levels x time)
+humidity = humidity[:, start_index:end_index + 1]
+windspeed = windspeed[:, start_index:end_index + 1]
+winddirection = winddirection[:, start_index:end_index + 1]
+
+# Slice surface and other variables
+pressure_msl = pressure_msl[start_index:end_index + 1]
+windspeed_10m = windspeed_10m[start_index:end_index + 1]
+winddirection_10m = winddirection_10m[start_index:end_index + 1]
+cape = cape[start_index:end_index + 1]
+lifted_index = lifted_index[start_index:end_index + 1]
+precipitation = precipitation[start_index:end_index + 1]
+showers = showers[start_index:end_index + 1]
+snowfall = snowfall[start_index:end_index + 1]
+temperature_850 = temperature_850[start_index:end_index + 1]
+temperature_500 = temperature_500[start_index:end_index + 1]
+wind_gusts_10m = wind_gusts_10m[start_index:end_index + 1]
+
+# Slice geopotential and derived thicknesses
+geopotential_1000 = geopotential_1000[start_index:end_index + 1]
+geopotential_500 = geopotential_500[start_index:end_index + 1]
+geopotential_850 = geopotential_850[start_index:end_index + 1]
+freezing_level = freezing_level[start_index:end_index + 1]
+Z500_1000 = Z500_1000[start_index:end_index + 1]
+Z850_1000 = Z850_1000[start_index:end_index + 1]
+
+print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
+
+
+
+
+
+
+
+
+
 
 
 
@@ -193,25 +244,34 @@ ax_cloud.set_ylim(0, 3)
 ax_cloud.set_yticks([0.5, 1.5, 2.5])
 ax_cloud.set_yticklabels(['Low', 'Mid', 'High'], fontsize=9, color='black')
 
+# Convert times_cloud to matplotlib date numbers once (should be sliced times)
+time_nums = mdates.date2num(times)
+
+# Calculate dt_cloud as time step in days
+dt_cloud = time_nums[1] - time_nums[0]
+
 for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.5, 2.5]):
-    for i in range(len(times_cloud)):
+    for i in range(len(times)):
         height = 0.6 * (cloud_cover[i] / 100)
         if height > 0:
             ax_cloud.axhspan(
                 band_center - height / 2,
                 band_center + height / 2,
-                xmin=(time_nums_cloud[i] - dt_cloud / 2 - time_nums_cloud[0]) / (time_nums_cloud[-1] - time_nums_cloud[0]),
-                xmax=(time_nums_cloud[i] + dt_cloud / 2 - time_nums_cloud[0]) / (time_nums_cloud[-1] - time_nums_cloud[0]),
+                xmin=(time_nums[i] - dt_cloud / 2 - time_nums[0]) / (time_nums[-1] - time_nums[0]),
+                xmax=(time_nums[i] + dt_cloud / 2 - time_nums[0]) / (time_nums[-1] - time_nums[0]),
                 color='white',
                 alpha=1.0
             )
 
-ax_cloud.set_title(f"LAMIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
-                   loc="center", fontsize=14, fontweight='bold', color='black', y=1.9)
+ax_cloud.set_title(
+    f"LAMIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
+)
 
 ax_cloud.tick_params(axis='y', colors='black')
-ax_cloud.set_xlim(time_nums_cloud[0], time_nums_cloud[-1])
-ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.8)
+ax_cloud.set_xlim(time_nums[0], time_nums[-1])
+ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
 
 
 
@@ -612,7 +672,7 @@ y_label = bft_max - label_offset_top
 for dir_deg in winddir_subset:
     to_dir = (dir_deg + 0) % 360
     if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
-        offset = 5  # pointing upward → place lower
+        offset = 6  # pointing upward → place lower
     else:
         offset = 2  # pointing downward → not too low
     y_barb.append(y_label - offset)
@@ -693,6 +753,7 @@ for i, idx in enumerate(label_indices):
 
 
 
+
 # Section 8: CAPE and Lifted Index
 ax_cape = axs[7]
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
@@ -701,6 +762,7 @@ ax_cape.tick_params(axis='y', labelcolor='black')
 # Filter negative Lifted Index values every 3 hours
 time_interval_hours = 1
 li_values = lifted_index
+first_forecast_time = times[0]
 gfs_run_time = first_forecast_time
 
 li_times = [gfs_run_time + pd.Timedelta(hours=i * time_interval_hours) for i in range(len(li_values))]
