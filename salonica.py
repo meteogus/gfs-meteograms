@@ -566,114 +566,81 @@ ax_pressure.set_yticks(pressure_ticks[1:-1])  # exclude first tick
 
 
 
-# Section 7: Wind Gusts 10m + Wind Barbs for Windspeed/Direction
-ax_windgust = axs[6]  
+# Section 7: Wind Gusts 10m (Beaufort) + Wind Barbs for Windspeed/Direction (No y-ticks, values inside colored boxes)
+ax_windgust = axs[6]
 
-# wind_gusts_10m 
-# Plot wind gusts as solid line
-ax_windgust.plot(times, wind_gusts_10m, color='orange', linewidth=1.5, label='Wind Gust (km/h)')
+# Calculate Beaufort scale wind gusts from gusts in km/h
+wind_gusts_10m_bft = np.round((wind_gusts_10m / 3.01) ** 0.66).astype(int)
 
-ax_windgust.set_ylabel('Gusts\n(km/h)', fontsize=9, color='black')
-ax_windgust.tick_params(axis='y', labelcolor='black')
-ax_windgust.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+# Set y-axis limits: from 0 to max gust + 1
+gust_max = np.max(wind_gusts_10m_bft)
+gust_min = np.min(wind_gusts_10m_bft)
+bft_min = max(0, gust_min - 1)  # avoid negative lower limit
+bft_max = gust_max + 1
+ax_windgust.set_ylim(bft_min, bft_max)
 
-# Set y-axis limits with padding +/- 5, min clipped at 0
-gust_min = np.min(wind_gusts_10m)
-gust_max = np.max(wind_gusts_10m)
-ymin = max(0, gust_min - 5)
-ymax = gust_max + 10
-ax_windgust.set_ylim(ymin, ymax)
-ax_windgust.set_yticks(np.arange(ymin, ymax, 20))
+# Remove y-axis ticks and labels (but keep axis label)
+ax_windgust.set_yticks([])
+ax_windgust.tick_params(axis='y', length=0)
 
-# Plot wind barbs for windspeed_10m & winddirection_10m (NOT gusts)
-wind_knots = windspeed_10m * 0.539957
+# Keep Y-axis label
+ax_windgust.set_ylabel('Gusts\n(bft)', fontsize=9, color='black')
+
+# Enable horizontal grid lines only (dotted style)
+ax_windgust.grid(axis='y', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+# Calculate wind barbs from windspeed and direction (in knots)
+wind_knots = windspeed_10m * 0.539957  # convert km/h to knots
 u10 = -wind_knots * np.sin(np.deg2rad(winddirection_10m))
 v10 = -wind_knots * np.cos(np.deg2rad(winddirection_10m))
 
-# Place barbs vertically centered between 40%-60% of y-axis range
-barb_y = ymin + 0.5 * (ymax - ymin)
+# Set barb height higher inside plot area (1.0 above bottom)
+barb_y = bft_min + 1.8
+
+# Convert times for matplotlib barbs
 time_nums = mdates.date2num(times)
+
+# Plot wind barbs every 3rd point
 ax_windgust.barbs(time_nums[::3], [barb_y] * len(time_nums[::3]), u10[::3], v10[::3],
                   length=6, linewidth=0.5, color='black', zorder=3)
 
-# Find daily max gusts for labeling
-daily_max = {}
+# Add gust value labels at 00Z, 06Z, 12Z, 18Z inside plot near the top
 
-for t, gust in zip(times, wind_gusts_10m):
-    day = t.date()
-    if day not in daily_max or gust > daily_max[day]['value']:
-        daily_max[day] = {'value': gust, 'time': t}
+# Extract hours from times
+hours = np.array([t.hour for t in times])
+
+# Target label hours
+label_hours = [0, 6, 12, 18]
+
+# Indices where hour matches label_hours
+label_indices = [i for i, h in enumerate(hours) if h in label_hours]
+
+# Label offset from top inside plot area
+label_offset_top = 2.5  # how far below top (Beaufort units)
+y = bft_max - label_offset_top
 
 
+for i, idx in enumerate(label_indices):
+    x = time_nums[idx]
+    val = wind_gusts_10m_bft[idx]
 
-# Add boxes with daily max gust values (only for values >= 20 km/h)
-for day, info in daily_max.items():
-    label_time = pd.Timestamp(info['time'])
-    label_val = info['value']
-
-    if label_val < 20:
-        continue  # skip values below 20 km/h
-
-    label_val_int = int(round(label_val))
-    y_min, y_max = ax_windgust.get_ylim()
-
-    i = times.get_indexer([label_time])[0]
-    wind_dir_at_label = winddirection_10m[i]
-
-    base_offset = 4
-    if (0 <= wind_dir_at_label <= 90) or (270 <= wind_dir_at_label <= 360):
-        margin = 10
-    else:
-        margin = 5
-
-    # Calculate y position for the box so it does not touch the line
-    if (0 <= wind_dir_at_label <= 90) or (270 <= wind_dir_at_label <= 360):
-        # Box below the line
-        text_y = label_val - base_offset
-        va = 'top'
-        if (label_val - text_y) < margin:
-            text_y = label_val - margin - 0.5
-        if text_y < y_min:
-            text_y = y_min + margin
-    else:
-        # Box above the line
-        text_y = label_val + base_offset
-        va = 'bottom'
-        if (text_y - label_val) < margin:
-            text_y = label_val + margin + 0.5
-        if text_y > y_max:
-            text_y = label_val - base_offset
-            va = 'top'
-            if (label_val - text_y) < margin:
-                text_y = label_val - margin - 0.5
-            if text_y < y_min:
-                text_y = y_min + margin
-
-    # Horizontal alignment
+    # Shift first label slightly right to avoid clipping
     if i == 0:
-        ha = 'left'
-        x_offset = (times[1] - times[0]) / 4
-        text_x = label_time + x_offset
-    elif i == len(times) - 1:
-        ha = 'right'
-        x_offset = (times[-1] - times[-2]) / 4
-        text_x = label_time - x_offset
+        x += 0.05  # adjust as needed
+
+    # Choose box color based on Beaufort value
+    if 1 <= val <= 4:
+        box_color = '#C6F6C6'
+    elif val == 5:
+        box_color = '#FFD580'
+    elif val >= 6:
+        box_color = '#FFB3B3'
     else:
-        ha = 'center'
-        text_x = label_time
+        box_color = 'white'  # default for 0 or unexpected
 
-    # Box color based on gust value
-    if 20 <= label_val_int <= 28:
-        fc_color = 'lightgreen'
-    elif 29 <= label_val_int <= 38:
-        fc_color = 'yellow'
-    else:
-        fc_color = '#FFD8A6'
-
-    bbox_props = dict(boxstyle="round,pad=0.3", fc=fc_color, ec="black", lw=0.8, alpha=0.8)
-
-    ax_windgust.text(text_x, text_y, f"{label_val:.0f}", fontsize=8,
-                     color='black', ha=ha, va=va, bbox=bbox_props)
+    # Draw the value with colored background box
+    ax_windgust.text(x, y, str(val), color='black', fontsize=10, ha='center', va='bottom',
+                     bbox=dict(facecolor=box_color, edgecolor='none', boxstyle='round,pad=0.3'))
 
 
 
