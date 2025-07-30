@@ -756,8 +756,8 @@ for i, idx in enumerate(label_indices):
 
 # Section 8: CAPE and Lifted Index
 ax_cape = axs[7]
-ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='black')
-ax_cape.tick_params(axis='y', labelcolor='black')
+ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='#007F7F')
+ax_cape.tick_params(axis='y', labelcolor='#007F7F')
 
 # Filter negative Lifted Index values every 3 hours
 time_interval_hours = 1
@@ -788,7 +788,7 @@ ax_cape.patch.set_alpha(0)
 bars = ax_li.bar(neg_li_times, neg_li_values, color='#F08228', width=0.08, align='center', zorder=1)
 
 # Plot the red CAPE line with very high zorder on ax_cape (always on top)
-cape_line, = ax_cape.plot(times, cape, color='black', linestyle='--',label='CAPE (J/kg)', zorder=10)
+cape_line, = ax_cape.plot(times, cape, color='#007F7F', label='CAPE (J/kg)', zorder=10)
 
 # Other elements (grid, zero line)
 ax_cape.grid(axis='both', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.7, zorder=0)
@@ -803,8 +803,6 @@ else:
 
 ax_cape.set_ylim(0, ymax)
 yticks = np.arange(step, ymax + 1, step)
-if len(yticks) > 1:
-    yticks = yticks[:-1]  # exclude last ytick
 ax_cape.set_yticks(yticks)
 
 
