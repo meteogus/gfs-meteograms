@@ -29,8 +29,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 37.98
-longitude = 22.76
+latitude = 38.01
+longitude = 22.75
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
