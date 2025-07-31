@@ -639,7 +639,7 @@ ax_pressure.set_yticks(yticks)
 ax_windgust = axs[6]
 
 # Convert wind gusts to Beaufort scale
-wind_gusts_10m_bft = np.round((wind_gusts_10m * 1.2 / 3.01) ** 0.6667).astype(int)
+wind_gusts_10m_bft = np.round((wind_gusts_10m / 3.01) ** 0.6667).astype(int)
 
 # Fixed y-axis limits
 ax_windgust.set_ylim(0, 14)  # Ensures consistent height for all elements
