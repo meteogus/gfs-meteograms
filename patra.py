@@ -587,7 +587,7 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-# Section 6: Pressure 
+# --- Section 6: Pressure ---
 ax_pressure = axs[5]
 
 # Plot sea level pressure (SLP)
@@ -596,13 +596,22 @@ ax_pressure.set_ylabel('SLP\n(hPa)', fontsize=9, color='black')
 ax_pressure.tick_params(axis='y', labelcolor='black')
 ax_pressure.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# Set y-axis limits and ticks for pressure
-p_min_rounded = int(np.floor(pressure_msl.min() / 5.0) * 5)
-p_max_rounded = int(np.ceil(pressure_msl.max() / 5.0) * 5)
-ax_pressure.set_ylim(p_min_rounded, p_max_rounded)
-ax_pressure.yaxis.set_major_locator(ticker.MultipleLocator(5))
-pressure_ticks = np.arange(p_min_rounded, p_max_rounded + 1, 5)
-ax_pressure.set_yticks(pressure_ticks[1:-1])  # exclude first tick
+# Set y-axis limits rounded to nearest 5
+pmin_rounded = int(np.floor(pressure_msl.min() / 5.0) * 5)
+pmax_rounded = int(np.ceil(pressure_msl.max() / 5.0) * 5)
+
+# Choose tick step based on pressure range
+p_range = pmax_rounded - pmin_rounded
+if p_range > 20:
+    step = 10
+else:
+    step = 5
+
+# Set y-axis limits and ticks
+ax_pressure.set_ylim(pmin_rounded, pmax_rounded)
+yticks = np.arange(pmin_rounded, pmax_rounded + 1, step)
+ax_pressure.set_yticks(yticks)
+
 
 
 
@@ -629,85 +638,88 @@ ax_pressure.set_yticks(pressure_ticks[1:-1])  # exclude first tick
 # --- Section 7: Wind Gusts + Wind Barbs ---
 ax_windgust = axs[6]
 
-# Calculate Beaufort scale from 10m wind gusts
-wind_gusts_10m_bft = np.ceil((wind_gusts_10m * 1.2 / 3.01) ** 0.6667).astype(int)
+# Convert wind gusts to Beaufort scale
+wind_gusts_10m_bft = np.round((wind_gusts_10m * 1.2 / 3.01) ** 0.6667).astype(int)
 
-# Set y-axis limits
-gust_max = np.nanmax(wind_gusts_10m_bft)
-gust_min = np.nanmin(wind_gusts_10m_bft)
-bft_min = max(0, gust_min - 1)
-bft_max = gust_max + 1
-ax_windgust.set_ylim(bft_min - 2, bft_max + 2)
+# Fixed y-axis limits
+ax_windgust.set_ylim(0, 14)  # Ensures consistent height for all elements
 
-# Remove y-ticks (only label shown)
+# Remove y-ticks and add label
 ax_windgust.set_yticks([])
 ax_windgust.tick_params(axis='y', length=0)
 ax_windgust.set_ylabel('Gusts\n(bft)', fontsize=9, color='black')
 
-# Add horizontal grid lines
+# Grid
 ax_windgust.grid(axis='y', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# Wind barbs every 3 hours
+# Select wind barbs every 3 hours
 step = 3
 time_nums = mdates.date2num(times)
-x_barb = time_nums[::step][1:].copy()
-
+x_barb = time_nums[::step][1:]
 winddir_subset = winddirection_10m[::step][1:]
 gust_subset = wind_gusts_10m[::step][1:]
 
-# Convert wind direction and speed to (u,v) components
+# Fixed label height for boxes
+y_label = 9  # constant y for all text boxes
+
+# Spacing depending on wind direction
+spacing_up = 7     # for NE or NW winds
+spacing_down = 3.5   # for SE or SW winds
+
+# Compute barb y positions dynamically
+y_barb_list = []
+for dir_deg in winddir_subset:
+    to_dir = dir_deg % 360
+    if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
+        spacing = spacing_up  # winds pointing upward → barb lower
+    else:
+        spacing = spacing_down  # winds pointing downward → barb higher
+    y_barb_list.append(y_label - spacing)
+
+y_barb_array = np.array(y_barb_list)
+
+# Compute u, v components
 u, v = [], []
 for dir_deg, gust in zip(winddir_subset, gust_subset):
-    to_dir = (dir_deg + 0) % 360  # meteorological TO direction
+    to_dir = dir_deg % 360
     angle_rad = np.deg2rad((270 - to_dir) % 360)
     u.append(gust * np.cos(angle_rad))
     v.append(gust * np.sin(angle_rad))
 u = np.array(u)
 v = np.array(v)
 
-# Adjust barb height depending on wind direction
-y_barb = []
-label_offset_top = 1.5
-y_label = bft_max - label_offset_top
-for dir_deg in winddir_subset:
-    to_dir = (dir_deg + 0) % 360
-    if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
-        offset = 5.5  # pointing upward → place lower
-    else:
-        offset = 2  # pointing downward → not too low
-    y_barb.append(y_label - offset)
-y_barb = np.array(y_barb)
-
-# Plot wind barbs
+# Barbs: same y_barb for all
 ax_windgust.barbs(
-    x_barb, y_barb,
+    x_barb,
+    y_barb_array,  
     u, v,
     length=5.5,
     barbcolor='black',
     linewidth=0.5,
-    pivot='tip',  # 'tip' puts arrowhead at the end of the vector
+    pivot='tip'
 )
 
-# Beaufort labels at specific hours
+
+# Add Beaufort value labels at specific hours
 hours = np.array([t.hour for t in times])
 label_hours = [0, 3, 6, 9, 12, 15, 18, 21]
 label_indices = [i for i, h in enumerate(hours) if h in label_hours][1:]
-y_label = bft_max - label_offset_top
 
-for i, idx in enumerate(label_indices):
+for idx in label_indices:
     x = time_nums[idx]
     val = wind_gusts_10m_bft[idx]
 
-    # Box color based on Beaufort value
+    # Box color by Beaufort value
     if 1 <= val <= 3:
-        box_color = '#C6F6C6'  # light wind
+        box_color = '#C6F6C6'
     elif 4 <= val <= 5:
-        box_color = '#FFD580'  # moderate wind
+        box_color = '#FFD580'
     elif val >= 6:
-        box_color = '#FFB3B3'  # strong wind
+        box_color = '#FFB3B3'
     else:
         box_color = 'white'
 
+    # Plot text box at fixed y_label
     ax_windgust.text(
         x,
         y_label,
@@ -718,6 +730,12 @@ for i, idx in enumerate(label_indices):
         va='bottom',
         bbox=dict(facecolor=box_color, edgecolor='none', boxstyle='round,pad=0.3')
     )
+
+
+
+
+
+
 
 
 
