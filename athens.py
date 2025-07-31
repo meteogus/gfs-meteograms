@@ -672,7 +672,7 @@ y_label = bft_max - label_offset_top
 for dir_deg in winddir_subset:
     to_dir = (dir_deg + 0) % 360
     if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
-        offset = 6  # pointing upward → place lower
+        offset = 5.5  # pointing upward → place lower
     else:
         offset = 2  # pointing downward → not too low
     y_barb.append(y_label - offset)
