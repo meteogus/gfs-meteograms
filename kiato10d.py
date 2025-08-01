@@ -199,7 +199,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"KIATO Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"38N,23E Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.4
 )
 
@@ -558,4 +558,5 @@ for tick, label in zip(ticks_00z, date_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
