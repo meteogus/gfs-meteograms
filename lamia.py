@@ -635,76 +635,85 @@ ax_pressure.set_yticks(yticks)
 
 
 
-# --- Section 7: Wind Gusts + Wind Barbs ---
+# --- Section 7: Wind Gusts and Beaufort Scale Visualization ---
 
-ax_windgust = axs[6]  # Select subplot for wind gusts
-gusts_knots = wind_gusts_10m / 1.852
+def compute_beaufort(knots):
+    conditions = [
+        (knots >= 0) & (knots < 1),      # 0 Bft
+        (knots >= 1) & (knots < 4),      # 1 Bft
+        (knots >= 4) & (knots < 7),      # 2 Bft
+        (knots >= 7) & (knots < 11),     # 3 Bft
+        (knots >= 11) & (knots < 17),    # 4 Bft
+        (knots >= 17) & (knots < 22),    # 5 Bft
+        (knots >= 22) & (knots < 28),    # 6 Bft
+        (knots >= 28) & (knots < 34),    # 7 Bft
+        (knots >= 34) & (knots < 41),    # 8 Bft
+        (knots >= 41) & (knots < 48),    # 9 Bft
+        (knots >= 48) & (knots < 56),    # 10 Bft
+        (knots >= 56) & (knots < 64),    # 11 Bft
+        knots >= 64                      # 12 Bft
+    ]
 
-# Define conditions for Beaufort scale based on wind gust speed in km/h
-conditions_knots = [
-    gusts_knots < 1,
-    (gusts_knots >= 1) & (gusts_knots <= 3),
-    (gusts_knots >= 4) & (gusts_knots <= 6),
-    (gusts_knots >= 7) & (gusts_knots <= 10),
-    (gusts_knots >= 11) & (gusts_knots <= 16),
-    (gusts_knots >= 17) & (gusts_knots <= 21),
-    (gusts_knots >= 22) & (gusts_knots <= 27),
-    (gusts_knots >= 28) & (gusts_knots <= 33),
-    (gusts_knots >= 34) & (gusts_knots <= 40),
-    (gusts_knots >= 41) & (gusts_knots <= 47),
-    (gusts_knots >= 48) & (gusts_knots <= 55),
-    (gusts_knots >= 56) & (gusts_knots <= 63),
-    gusts_knots >= 64
-]
-bft_values = np.arange(13)  # Beaufort scale 0-12
-wind_gusts_10m_bft = np.select(conditions_knots, bft_values)  # Map gust speeds to Beaufort values
+    values = np.arange(13)
+    return np.select(conditions, values)
 
-# Set y-axis limits and labels
-ax_windgust.set_ylim(0, 14)
-ax_windgust.set_yticks([])
-ax_windgust.tick_params(axis='y', length=0)
-ax_windgust.set_ylabel('Gusts\n(bft)', fontsize=9, color='black')
 
-# Add horizontal grid lines for clarity
-ax_windgust.grid(axis='y', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+# Select every 3rd data point starting from index 3 to reduce clutter
+indices = np.arange(3, len(times), 3)
 
-# Select every 3rd hour for wind barbs plotting
-step = 3
-time_nums = mdates.date2num(times)
-x_barb = time_nums[::step][1:]
-winddir_subset = winddirection_10m[::step][1:]
-gust_subset = wind_gusts_10m[::step][1:]
+times_sel = times[indices]
+gusts_sel = wind_gusts_10m[indices]          # gusts in km/h from data
+dirs_sel = winddirection_10m[indices]        # wind direction in degrees
 
-# Convert gust speeds from km/h to knots (1 km/h = 0.539957 knots)
-gust_knots = gust_subset * 0.539957
+# --- UNIT CONVERSION ---
+# Convert gusts from km/h to knots for Beaufort scale and barbs
+gusts_knots = gusts_sel / 1.852
 
-# Fixed y-position for labels
-y_label = 9
+# Compute Beaufort scale values (0 to 12)
+gusts_bft = compute_beaufort(gusts_knots)
 
-# Adjust vertical position of barbs based on wind direction to reduce overlap
-spacing_up = 7
-spacing_down = 3.5
-y_barb_list = []
-for dir_deg in winddir_subset:
-    to_dir = dir_deg % 360
-    spacing = spacing_up if (0 <= to_dir <= 90 or 270 <= to_dir <= 360) else spacing_down
-    y_barb_list.append(y_label - spacing)
-y_barb_array = np.array(y_barb_list)
+# Convert times to matplotlib date format for plotting
+times_num = mdates.date2num(times_sel)
 
-# Calculate u and v wind components from wind direction and speed in knots
-u, v = [], []
-for dir_deg, gust in zip(winddir_subset, gust_knots):
-    to_dir = dir_deg % 360
-    angle_rad = np.deg2rad((270 - to_dir) % 360)  # Convert meteorological wind direction to math angle
-    u.append(gust * np.cos(angle_rad))  # East-West component
-    v.append(gust * np.sin(angle_rad))  # North-South component
+# Calculate wind barb vector components (u,v) from direction and speed in knots
+u = []
+v = []
+for wd, gs in zip(dirs_sel, gusts_knots):
+    # Wind direction is meteorological (where wind comes FROM)
+    # Convert to direction TO for vector components
+    to_dir = (wd + 0) % 360
+    # Angle for plotting (matplotlib uses x=0° east, angles CCW)
+    angle_rad = np.deg2rad((270 - to_dir) % 360)
+    u.append(gs * np.cos(angle_rad))
+    v.append(gs * np.sin(angle_rad))
 u = np.array(u)
 v = np.array(v)
 
-# Plot wind barbs
+# Position barbs slightly above or below baseline depending on wind direction quadrant
+y_base = 9
+spacing_up = 7
+spacing_down = 3.5
+y_barbs = []
+for wd in dirs_sel:
+    to_dir = (wd + 0) % 360
+    if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
+        y_barbs.append(y_base - spacing_up)
+    else:
+        y_barbs.append(y_base - spacing_down)
+y_barbs = np.array(y_barbs)
+
+# Clear and setup wind gust subplot
+ax_windgust = axs[6]
+ax_windgust.clear()
+ax_windgust.set_ylim(0, 14)
+ax_windgust.set_yticks([])
+ax_windgust.set_ylabel('Gusts\n(bft)', fontsize=9)
+ax_windgust.grid(axis='y', color='#92A9B6', linestyle='dotted', dashes=(2,5), alpha=0.8)
+
+# Plot wind barbs at selected times and heights
 ax_windgust.barbs(
-    x_barb,
-    y_barb_array,
+    times_num,
+    y_barbs,
     u, v,
     length=5.5,
     barbcolor='black',
@@ -712,34 +721,24 @@ ax_windgust.barbs(
     pivot='tip'
 )
 
-# Add Beaufort scale labels at specified hours
-hours = np.array([t.hour for t in times])
-label_hours = [0, 3, 6, 9, 12, 15, 18, 21]
-label_indices = [i for i, h in enumerate(hours) if h in label_hours][1:]  # Skip first to align with barbs
-
-for idx in label_indices:
-    x = time_nums[idx]
-    val = wind_gusts_10m_bft[idx]
-
-    # Color code label boxes by Beaufort scale range
-    if 1 <= val <= 3:
-        box_color = '#C6F6C6'  # Light green (light breeze)
-    elif 4 <= val <= 5:
-        box_color = '#FFD580'  # Orange (moderate breeze)
-    elif val >= 6:
-        box_color = '#FFB3B3'  # Red (strong breeze and above)
+# Plot Beaufort numbers as colored boxes exactly at the barbs
+for x, bft_val in zip(times_num, gusts_bft):
+    if bft_val == 0:
+        box_color = 'white'
+    elif 1 <= bft_val <= 3:
+        box_color = '#C6F6C6'  # light green
+    elif 4 <= bft_val <= 5:
+        box_color = '#FFD580'  # light orange
     else:
-        box_color = 'white'    # Calm/no wind
-
-    # Plot text label on the graph
+        box_color = '#FFB3B3'  # light red
     ax_windgust.text(
         x,
-        y_label,
-        str(val),
-        color='black',
+        y_base,
+        str(bft_val),
         fontsize=10,
         ha='center',
         va='bottom',
+        color='black',
         bbox=dict(facecolor=box_color, edgecolor='none', boxstyle='round,pad=0.3')
     )
 
