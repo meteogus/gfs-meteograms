@@ -329,7 +329,7 @@ for i, p in enumerate(pressure_levels):
     if p == 650:
         continue  # Skip barbs at 650 hPa
 
-    # Convert windspeed from m/s to knots
+    # Convert windspeed from km/h to knots
     ws_knots = windspeed[i][indices_3h] * 0.539957
 
     # Convert wind direction (meteorological "from") to u/v components
@@ -657,7 +657,6 @@ def compute_beaufort(knots):
     values = np.arange(13)
     return np.select(conditions, values)
 
-
 # Select every 3rd data point starting from index 3 to reduce clutter
 indices = np.arange(3, len(times), 3)
 
@@ -702,6 +701,13 @@ for wd in dirs_sel:
         y_barbs.append(y_base - spacing_down)
 y_barbs = np.array(y_barbs)
 
+# Exclude first and last points to avoid first and last Beaufort boxes and barbs
+times_num_sel = times_num[:-1]
+gusts_bft_sel = gusts_bft[:-1]
+y_barbs_sel = y_barbs[:-1]
+u_sel = u[:-1]
+v_sel = v[:-1]
+
 # Clear and setup wind gust subplot
 ax_windgust = axs[6]
 ax_windgust.clear()
@@ -710,27 +716,30 @@ ax_windgust.set_yticks([])
 ax_windgust.set_ylabel('Gusts\n(bft)', fontsize=9)
 ax_windgust.grid(axis='y', color='#92A9B6', linestyle='dotted', dashes=(2,5), alpha=0.8)
 
-# Plot wind barbs at selected times and heights
+# Plot wind barbs at selected times and heights (excluding first and last)
 ax_windgust.barbs(
-    times_num,
-    y_barbs,
-    u, v,
+    times_num_sel,
+    y_barbs_sel,
+    u_sel, v_sel,
     length=5.5,
     barbcolor='black',
     linewidth=0.5,
     pivot='tip'
 )
 
-# Plot Beaufort numbers as colored boxes exactly at the barbs
-for x, bft_val in zip(times_num, gusts_bft):
-    if bft_val == 0:
-        box_color = 'white'
-    elif 1 <= bft_val <= 3:
-        box_color = '#C6F6C6'  # light green
-    elif 4 <= bft_val <= 5:
-        box_color = '#FFD580'  # light orange
+# Plot Beaufort numbers as colored boxes exactly at the barbs (excluding first and last)
+for x, bft_val in zip(times_num_sel, gusts_bft_sel):
+    if 0 <= bft_val <= 1:
+        box_color = 'white'          # Calm sea (Beaufort 0–1)
+    elif 2 <= bft_val <= 3:
+        box_color = '#C6F6C6'        # Light green – Light breeze (Beaufort 2–3)
+    elif bft_val == 4:
+        box_color = '#FFF5BA'        # Light yellow – Moderate breeze (Beaufort 4)
+    elif bft_val == 5:
+        box_color = '#FFD580'        # Light orange – Fresh breeze / near strong (Beaufort 5)
     else:
-        box_color = '#FFB3B3'  # light red
+        box_color = '#FFB3B3'        # Light red – Strong breeze or higher (Beaufort 6+)
+    
     ax_windgust.text(
         x,
         y_base,
