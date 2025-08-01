@@ -29,8 +29,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.01
-longitude = 22.75
+latitude = 38
+longitude = 23
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -558,3 +558,4 @@ for tick, label in zip(ticks_00z, date_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
