@@ -621,28 +621,30 @@ ax_pressure.set_yticks(yticks)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # --- Section 7: Wind Gusts + Wind Barbs ---
 ax_windgust = axs[6]
 
-# Convert wind gusts to Beaufort scale
-wind_gusts_10m_bft = np.round((wind_gusts_10m / 3.01) ** 0.6667).astype(int)
+# --- Accurate conversion: wind gusts to Beaufort scale ---
+conditions = [
+    wind_gusts_10m < 1,
+    (wind_gusts_10m >= 1) & (wind_gusts_10m <= 5),
+    (wind_gusts_10m >= 6) & (wind_gusts_10m <= 11),
+    (wind_gusts_10m >= 12) & (wind_gusts_10m <= 19),
+    (wind_gusts_10m >= 20) & (wind_gusts_10m <= 28),
+    (wind_gusts_10m >= 29) & (wind_gusts_10m <= 38),
+    (wind_gusts_10m >= 39) & (wind_gusts_10m <= 49),
+    (wind_gusts_10m >= 50) & (wind_gusts_10m <= 61),
+    (wind_gusts_10m >= 62) & (wind_gusts_10m <= 74),
+    (wind_gusts_10m >= 75) & (wind_gusts_10m <= 88),
+    (wind_gusts_10m >= 89) & (wind_gusts_10m <= 102),
+    (wind_gusts_10m >= 103) & (wind_gusts_10m <= 117),
+    wind_gusts_10m >= 118
+]
+bft_values = np.arange(13)
+wind_gusts_10m_bft = np.select(conditions, bft_values)
 
 # Fixed y-axis limits
-ax_windgust.set_ylim(0, 14)  # Ensures consistent height for all elements
+ax_windgust.set_ylim(0, 14)
 
 # Remove y-ticks and add label
 ax_windgust.set_yticks([])
@@ -659,28 +661,25 @@ x_barb = time_nums[::step][1:]
 winddir_subset = winddirection_10m[::step][1:]
 gust_subset = wind_gusts_10m[::step][1:]
 
-# Fixed label height for boxes
-y_label = 9  # constant y for all text boxes
+# Convert gusts to knots for barb speed (1 knot = 1.852 km/h)
+gust_knots = gust_subset / 1.852
 
-# Spacing depending on wind direction
-spacing_up = 7     # for NE or NW winds
-spacing_down = 3.5   # for SE or SW winds
+# Fixed label height
+y_label = 9
 
-# Compute barb y positions dynamically
+# Dynamic spacing based on wind direction
+spacing_up = 7
+spacing_down = 3.5
 y_barb_list = []
 for dir_deg in winddir_subset:
     to_dir = dir_deg % 360
-    if 0 <= to_dir <= 90 or 270 <= to_dir <= 360:
-        spacing = spacing_up  # winds pointing upward → barb lower
-    else:
-        spacing = spacing_down  # winds pointing downward → barb higher
+    spacing = spacing_up if (0 <= to_dir <= 90 or 270 <= to_dir <= 360) else spacing_down
     y_barb_list.append(y_label - spacing)
-
 y_barb_array = np.array(y_barb_list)
 
-# Compute u, v components
+# Compute u, v components from wind direction and gust in knots
 u, v = [], []
-for dir_deg, gust in zip(winddir_subset, gust_subset):
+for dir_deg, gust in zip(winddir_subset, gust_knots):
     to_dir = dir_deg % 360
     angle_rad = np.deg2rad((270 - to_dir) % 360)
     u.append(gust * np.cos(angle_rad))
@@ -688,10 +687,10 @@ for dir_deg, gust in zip(winddir_subset, gust_subset):
 u = np.array(u)
 v = np.array(v)
 
-# Barbs: same y_barb for all
+# Draw wind barbs
 ax_windgust.barbs(
     x_barb,
-    y_barb_array,  
+    y_barb_array,
     u, v,
     length=5.5,
     barbcolor='black',
@@ -699,8 +698,7 @@ ax_windgust.barbs(
     pivot='tip'
 )
 
-
-# Add Beaufort value labels at specific hours
+# Add Beaufort value labels at selected hours
 hours = np.array([t.hour for t in times])
 label_hours = [0, 3, 6, 9, 12, 15, 18, 21]
 label_indices = [i for i, h in enumerate(hours) if h in label_hours][1:]
@@ -719,7 +717,7 @@ for idx in label_indices:
     else:
         box_color = 'white'
 
-    # Plot text box at fixed y_label
+    # Plot text box
     ax_windgust.text(
         x,
         y_label,
@@ -730,6 +728,21 @@ for idx in label_indices:
         va='bottom',
         bbox=dict(facecolor=box_color, edgecolor='none', boxstyle='round,pad=0.3')
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
