@@ -80,8 +80,8 @@ jobs:
               f"patra{run_hour}.png",
               f"salonica{run_hour}.png",
               f"ikaria{run_hour}.png",
-              "london.png"  # static filename,
-              "kiato10d.png"  # static filename
+              "london.png",
+              "kiato10d.png"
           ]
 
           host = os.getenv('SFTP_HOST')
