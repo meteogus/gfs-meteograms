@@ -978,7 +978,8 @@ axs[-1].xaxis.set_major_formatter(FuncFormatter(
 axs[-1].tick_params(axis='x', which='major', labelsize=9, pad=5)
 
 ticks_00z = [t for t in mdates.date2num(times) if mdates.num2date(t).hour == 0]
-labels_00z = [mdates.num2date(t).strftime('%d%b').upper() for t in ticks_00z]
+
+labels_00z = [f"{mdates.num2date(t).day}{mdates.num2date(t).strftime('%b').upper()}" for t in ticks_00z]
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
@@ -1032,3 +1033,4 @@ filename = f"ikaria{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
