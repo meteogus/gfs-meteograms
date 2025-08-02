@@ -48,7 +48,7 @@ params = {
         "precipitation",            
         "showers",         
         "snowfall",
-        "freezing_level_height"
+        "freezing_level_height",
     ]),
     "forecast_days": 11,
     "timezone": "UTC",
@@ -199,7 +199,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"38N,23E Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"KIATO Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.4
 )
 
@@ -519,12 +519,13 @@ axs[-1].xaxis.set_major_locator(mdates.HourLocator(byhour=[0]))
 axs[-1].xaxis.set_major_formatter(FuncFormatter(lambda x, pos: ''))
 axs[-1].tick_params(axis='x', which='major', labelsize=9, pad=5)
 
-# Extract ticks at 00Z and format as date labels (e.g., 06AUG)
+# Extract ticks at 00Z and format as date labels (e.g., 6AUG)
 ticks_00z = [t for t in mdates.date2num(times) if mdates.num2date(t).hour == 0]
-date_labels = [mdates.num2date(t).strftime('%d%b').upper() for t in ticks_00z]
+
+labels_00z = [f"{mdates.num2date(t).day}{mdates.num2date(t).strftime('%b').upper()}" for t in ticks_00z]
 
 # Add date labels below bottom subplot
-for tick, label in zip(ticks_00z, date_labels):
+for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
         tick, -0.2,
         label,
@@ -540,7 +541,7 @@ ax_cloud_secondary_x.set_xticklabels([])
 ax_cloud_secondary_x.tick_params(axis='x', which='major', pad=5)
 
 # Add date labels above the top subplot
-for tick, label in zip(ticks_00z, date_labels):
+for tick, label in zip(ticks_00z, labels_00z):
     axs[0].text(
         tick, 1.1,
         label,
@@ -558,7 +559,3 @@ for tick, label in zip(ticks_00z, date_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
-
-
-
-
