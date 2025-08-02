@@ -48,7 +48,7 @@ params = {
         "precipitation",            
         "showers",         
         "snowfall",
-        "freezing_level_height",
+        "freezing_level_height"
     ]),
     "forecast_days": 11,
     "timezone": "UTC",
@@ -558,6 +558,7 @@ for tick, label in zip(ticks_00z, date_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
