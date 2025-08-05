@@ -7,10 +7,13 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
+import matplotlib.patheffects as pe
 from matplotlib.ticker import FuncFormatter
 
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
+
+
 
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
@@ -29,8 +32,9 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.00
-longitude = 23.75
+latitude = 54
+longitude = 0
+
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -78,7 +82,14 @@ params = {
         "geopotential_height_500hPa",
         "geopotential_height_850hPa",
         "freezing_level_height",
+        "temperature_1000hPa",
+        "temperature_950hPa",
+        "temperature_900hPa",
         "temperature_850hPa",
+        "temperature_800hPa",
+        "temperature_750hPa",
+        "temperature_700hPa",
+        "temperature_650hPa",
         "temperature_500hPa"
     ]),
     "forecast_days": 6,
@@ -127,7 +138,14 @@ lifted_index = get_data('lifted_index')
 precipitation = get_data('precipitation')
 showers = get_data('showers')
 snowfall = get_data('snowfall')
+temperature_1000 = get_data("temperature_1000hPa")
+temperature_950 = get_data("temperature_950hPa")
+temperature_900 = get_data("temperature_900hPa")
 temperature_850 = get_data("temperature_850hPa")
+temperature_800 = get_data("temperature_800hPa")
+temperature_750 = get_data("temperature_750hPa")
+temperature_700 = get_data("temperature_700hPa")
+temperature_650 = get_data("temperature_650hPa")
 temperature_500 = get_data("temperature_500hPa")
 wind_gusts_10m = get_data("wind_gusts_10m")
 
@@ -287,83 +305,119 @@ ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alph
 
 
 
-
-
 # Section 2: Humidity & Winds
+
 ax_humidity = axs[1]
 
-# Create meshgrid for plotting
-T, P = np.meshgrid(time_nums, pressure_levels)
+# Pressure levels
+pressure_levels = np.array([1000, 950, 900, 850, 800, 750, 700, 650])
 
-# Define colormap for humidity
+# --- Prepare 3-hourly time indices and numeric times ---
+indices_3h = np.arange(0, len(times), 3)
+times_3h = [times[i] for i in indices_3h]
+time_nums_3h = mdates.date2num(times_3h)
+time_nums_all = mdates.date2num(times)
+
+# --- 2D temperature array ---
+temperature = np.array([
+    get_data(f"temperature_{p}hPa")[start_index:end_index+1]
+    for p in pressure_levels
+])
+
+# --- Compute freezing level ---
+freezing_pressures_3h = []
+for t_idx in indices_3h:
+    temps = temperature[:, t_idx]
+
+    if np.all(temps > 0) or np.all(temps < 0):
+        freezing_pressures_3h.append(np.nan)
+        continue
+
+    zero_idx = np.where(np.isclose(temps, 0.0, atol=1e-6))[0]
+    if zero_idx.size > 0:
+        freezing_pressures_3h.append(pressure_levels[zero_idx[0]])
+        continue
+
+    cross_idx = np.where(temps[:-1] * temps[1:] < 0)[0]
+    if cross_idx.size > 0:
+        i = cross_idx[0]
+        p1, p2 = pressure_levels[i], pressure_levels[i+1]
+        T1, T2 = temps[i], temps[i+1]
+        p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1) if not np.isclose(T1, T2) else 0.5*(p1+p2)
+        freezing_pressures_3h.append(p_freeze)
+    else:
+        freezing_pressures_3h.append(np.nan)
+
+freezing_pressures_3h = np.array(freezing_pressures_3h)
+
+# --- Meshgrid for humidity ---
+T, P = np.meshgrid(time_nums_all, pressure_levels)
+
+# --- Humidity plot ---
 colors = ['#FFFFFF', '#EAF5EA', '#C8D7C8', '#78D778', '#00FF00', '#00BE00']
 bounds = [0, 30, 50, 70, 90, 95]
 cmap_rh = mcolors.ListedColormap(colors)
 norm_rh = mcolors.BoundaryNorm(bounds, cmap_rh.N, extend='max')
 
-# Plot humidity as filled contours
-cf = ax_humidity.contourf(
-    T, P, humidity,
-    levels=bounds,
-    cmap=cmap_rh,
-    norm=norm_rh,
-    extend='max'
-)
+cf = ax_humidity.contourf(T, P, humidity, levels=bounds, cmap=cmap_rh, norm=norm_rh, extend='max')
 
-# Set Y axis (pressure levels)
+# --- Y-axis: 1000 to 650 (hide labels for 1000 and 650) ---
+yticks = [p for p in pressure_levels if p >= 650]
 ax_humidity.set_ylim(1000, 650)
-ax_humidity.set_yticks(pressure_levels)
-ax_humidity.set_yticklabels(
-    ["" if p in (1000, 650) else str(p) for p in pressure_levels],
-    fontsize=9
-)
+ax_humidity.set_yticks(yticks)
+ax_humidity.set_yticklabels(["" if p in (1000, 650) else str(p) for p in yticks], fontsize=9)
 
+# Gridlines
+ax_humidity.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# Add gridlines
-ax_humidity.grid(axis='x', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.8)
-
-# Plot wind barbs every 3 hours, skipping 650 hPa level
-indices_3h = np.arange(0, len(times), 3)
-
+# --- Wind barbs (skip only 650) ---
 for i, p in enumerate(pressure_levels):
     if p == 650:
-        continue  # Skip barbs at 650 hPa
-
-    # Convert windspeed from km/h to knots
+        continue
     ws_knots = windspeed[i][indices_3h] * 0.539957
-
-    # Convert wind direction (meteorological "from") to u/v components
     theta = np.deg2rad(winddirection[i][indices_3h])
     u = -ws_knots * np.sin(theta)
     v = -ws_knots * np.cos(theta)
+    ax_humidity.barbs(time_nums_3h, np.full(len(indices_3h), p), u, v, length=6, linewidth=0.3)
 
-    # Plot barbs
-    ax_humidity.barbs(
-        time_nums[indices_3h],
-        np.full(len(indices_3h), p),
-        u, v,
-        length=6,
-        linewidth=0.3
-    )
+# --- Contour lines ---
+contour_lines = ax_humidity.contour(T, P, humidity, levels=bounds[1:], colors='grey', linewidths=1, linestyles='--')
+ax_humidity.clabel(contour_lines, fmt='%d', fontsize=8, inline=True, colors='#333333')
 
-# Add humidity contour lines
-contour_lines = ax_humidity.contour(
-    T, P, humidity,
-    levels=bounds[1:],            
-    colors='grey',
-    linewidths=1,                
-    linestyles='--',                
+# --- Freezing level line ---
+ax_humidity.plot(
+    time_nums_3h, freezing_pressures_3h,
+    color='white', linewidth=0.6, solid_capstyle='round', zorder=30,
+    path_effects=[
+        pe.Stroke(linewidth=1.8, foreground='black'),
+        pe.Stroke(linewidth=1.8, foreground='white'),
+        pe.Stroke(linewidth=1.8, foreground='black'),
+        pe.Normal()
+    ]
 )
 
+# --- Draw "0" in a small black box at EVERY 00Z (if freezing exists) ---
+bbox_props = dict(boxstyle="round,pad=0.02", fc="black", ec="black", lw=1)
+for i, dt in enumerate(times_3h):
+    if getattr(dt, "hour", None) == 0 and getattr(dt, "minute", None) == 0:
+        p_freeze = freezing_pressures_3h[i]
+        if not np.isnan(p_freeze):
+            # If the freezing pressure is near the top boundary, shift slightly down
+            if p_freeze <= 655:
+                y_val = p_freeze + 10  # move 10 hPa down to keep it visible
+            else:
+                y_val = p_freeze
 
-# Label contours
-ax_humidity.clabel(
-    contour_lines,
-    fmt='%d',
-    fontsize=8,
-    inline=True,
-    colors='#333333',
-)
+            ax_humidity.text(
+                time_nums_3h[i], y_val, "0",
+                fontsize=8,
+                fontweight="normal",
+                color="white",
+                ha="center",
+                va="center",
+                bbox=bbox_props,
+                zorder=50
+            )
 
 
 
@@ -1032,4 +1086,5 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
