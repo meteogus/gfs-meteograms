@@ -32,8 +32,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 54
-longitude = 0
+latitude = 38.90
+longitude = 22.43
 
 
 # API call parameters
@@ -1087,5 +1087,6 @@ filename = f"lamia{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
