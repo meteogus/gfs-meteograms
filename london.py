@@ -305,11 +305,10 @@ ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alph
 
 
 
-# Section 2: Humidity & Winds
-
+# --- Section 2: Humidity & Winds (complete, no NaNs; capped display at 650 hPa) ---
 ax_humidity = axs[1]
 
-# Pressure levels
+# Pressure levels (surface → top of section). Keep this order.
 pressure_levels = np.array([1000, 950, 900, 850, 800, 750, 700, 650])
 
 # --- Prepare 3-hourly time indices and numeric times ---
@@ -318,50 +317,78 @@ times_3h = [times[i] for i in indices_3h]
 time_nums_3h = mdates.date2num(times_3h)
 time_nums_all = mdates.date2num(times)
 
-# --- 2D temperature array ---
+# --- 2D temperature array (pressure x time) ---
 temperature = np.array([
     get_data(f"temperature_{p}hPa")[start_index:end_index+1]
     for p in pressure_levels
 ])
 
-# --- Compute freezing level ---
+# --- Compute freezing level for every 3-hour timestep (no NaNs).
+# We search for a sign crossing between adjacent levels; if none, we extrapolate.
 freezing_pressures_3h = []
 for t_idx in indices_3h:
     temps = temperature[:, t_idx]
 
-    if np.all(temps > 0) or np.all(temps < 0):
-        freezing_pressures_3h.append(np.nan)
-        continue
-
-    zero_idx = np.where(np.isclose(temps, 0.0, atol=1e-6))[0]
-    if zero_idx.size > 0:
-        freezing_pressures_3h.append(pressure_levels[zero_idx[0]])
-        continue
-
-    cross_idx = np.where(temps[:-1] * temps[1:] < 0)[0]
+    # Search for a crossing between adjacent levels
+    cross_idx = np.where(temps[:-1] * temps[1:] <= 0)[0]  # <= handles exact zero
     if cross_idx.size > 0:
         i = cross_idx[0]
         p1, p2 = pressure_levels[i], pressure_levels[i+1]
         T1, T2 = temps[i], temps[i+1]
-        p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1) if not np.isclose(T1, T2) else 0.5*(p1+p2)
+        # if T1 == T2 use midpoint, else linear interpolation in pressure
+        if np.isclose(T1, T2):
+            p_freeze = 0.5 * (p1 + p2)
+        else:
+            p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1)
         freezing_pressures_3h.append(p_freeze)
-    else:
-        freezing_pressures_3h.append(np.nan)
+        continue
 
-freezing_pressures_3h = np.array(freezing_pressures_3h)
+    # No crossing found -> either all Temps > 0 (freezing above top) or all Temps < 0 (below bottom)
+    if np.all(temps > 0):
+        # Extrapolate upward using the two top-most levels (second-last, last)
+        p_a, p_b = pressure_levels[-2], pressure_levels[-1]  # e.g. 700, 650
+        T_a, T_b = temps[-2], temps[-1]
+        if np.isclose(T_a, T_b):
+            p_freeze = p_b  # fallback
+        else:
+            # linear extrapolation where T == 0 beyond the top
+            p_freeze = p_b + (0.0 - T_b) * (p_a - p_b) / (T_a - T_b)
+        freezing_pressures_3h.append(p_freeze)
+        continue
 
-# --- Meshgrid for humidity ---
+    if np.all(temps < 0):
+        # Extrapolate downward using the two bottom-most levels (first, second)
+        p_a, p_b = pressure_levels[0], pressure_levels[1]  # e.g. 1000, 950
+        T_a, T_b = temps[0], temps[1]
+        if np.isclose(T_a, T_b):
+            p_freeze = p_a
+        else:
+            # linear extrapolation where T == 0 below the bottom
+            p_freeze = p_a + (0.0 - T_a) * (p_b - p_a) / (T_b - T_a)
+        freezing_pressures_3h.append(p_freeze)
+        continue
+
+    # Fallback (shouldn't be reached)
+    freezing_pressures_3h.append(pressure_levels[-1])
+
+freezing_pressures_3h = np.array(freezing_pressures_3h, dtype=float)
+
+# --- Display clamp: force any above-top values to exactly top_limit for plotting alignment ---
+top_limit = 650
+# Values < top_limit mean 'above the top' because pressure decreases with altitude.
+p_display = np.where(freezing_pressures_3h < top_limit, top_limit, freezing_pressures_3h)
+
+# --- Meshgrid for humidity plotting ---
 T, P = np.meshgrid(time_nums_all, pressure_levels)
 
-# --- Humidity plot ---
+# --- Humidity filled contours ---
 colors = ['#FFFFFF', '#EAF5EA', '#C8D7C8', '#78D778', '#00FF00', '#00BE00']
 bounds = [0, 30, 50, 70, 90, 95]
 cmap_rh = mcolors.ListedColormap(colors)
 norm_rh = mcolors.BoundaryNorm(bounds, cmap_rh.N, extend='max')
-
 cf = ax_humidity.contourf(T, P, humidity, levels=bounds, cmap=cmap_rh, norm=norm_rh, extend='max')
 
-# --- Y-axis: 1000 to 650 (hide labels for 1000 and 650) ---
+# --- Y-axis: 1000 (bottom) to 650 (top); hide labels for extremes ---
 yticks = [p for p in pressure_levels if p >= 650]
 ax_humidity.set_ylim(1000, 650)
 ax_humidity.set_yticks(yticks)
@@ -370,7 +397,7 @@ ax_humidity.set_yticklabels(["" if p in (1000, 650) else str(p) for p in yticks]
 # Gridlines
 ax_humidity.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# --- Wind barbs (skip only 650) ---
+# --- Wind barbs (skip level 650) ---
 for i, p in enumerate(pressure_levels):
     if p == 650:
         continue
@@ -380,14 +407,14 @@ for i, p in enumerate(pressure_levels):
     v = -ws_knots * np.cos(theta)
     ax_humidity.barbs(time_nums_3h, np.full(len(indices_3h), p), u, v, length=6, linewidth=0.3)
 
-# --- Contour lines ---
+# --- Contour lines on top ---
 contour_lines = ax_humidity.contour(T, P, humidity, levels=bounds[1:], colors='grey', linewidths=1, linestyles='--')
 ax_humidity.clabel(contour_lines, fmt='%d', fontsize=8, inline=True, colors='#333333')
 
 # --- Freezing level line ---
 ax_humidity.plot(
-    time_nums_3h, freezing_pressures_3h,
-    color='white', linewidth=0.6, solid_capstyle='round', zorder=30,
+    time_nums_3h, p_display,  # <-- use clamped display values
+    color='white', linewidth=0.8, solid_capstyle='round', zorder=30,
     path_effects=[
         pe.Stroke(linewidth=1.8, foreground='black'),
         pe.Stroke(linewidth=1.8, foreground='white'),
@@ -396,28 +423,25 @@ ax_humidity.plot(
     ]
 )
 
-# --- Draw "0" in a small black box at EVERY 00Z (if freezing exists) ---
+# --- Draw "0" boxes at 15Z only when freezing level is visible inside section (>= top_limit) ---
 bbox_props = dict(boxstyle="round,pad=0.02", fc="black", ec="black", lw=1)
-for i, dt in enumerate(times_3h):
-    if getattr(dt, "hour", None) == 0 and getattr(dt, "minute", None) == 0:
-        p_freeze = freezing_pressures_3h[i]
-        if not np.isnan(p_freeze):
-            # If the freezing pressure is near the top boundary, shift slightly down
-            if p_freeze <= 655:
-                y_val = p_freeze + 10  # move 10 hPa down to keep it visible
-            else:
-                y_val = p_freeze
+# Ensure final ylim is used for nudging
+y0, y1 = ax_humidity.get_ylim()
+vis_ymin, vis_ymax = min(y0, y1), max(y0, y1)
+edge_margin = (vis_ymax - vis_ymin) * 0.03
 
-            ax_humidity.text(
-                time_nums_3h[i], y_val, "0",
-                fontsize=8,
-                fontweight="normal",
-                color="white",
-                ha="center",
-                va="center",
-                bbox=bbox_props,
-                zorder=50
-            )
+for i, dt in enumerate(times_3h):
+    if getattr(dt, "hour", None) == 15 and getattr(dt, "minute", None) in (0, None):
+        pv = freezing_pressures_3h[i]
+        if pv >= top_limit:  # visible inside section
+            y_val = pv
+            # nudge down if too close to top edge
+            if y_val >= vis_ymax - edge_margin:
+                y_val = vis_ymax - edge_margin
+            ax_humidity.text(mdates.date2num(dt), y_val, "0",
+                             fontsize=8, color='white', ha='center', va='center',
+                             bbox=bbox_props, zorder=50)
+
 
 
 
@@ -1111,6 +1135,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
