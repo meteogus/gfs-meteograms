@@ -282,7 +282,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"ATHENS Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"LONDON Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
@@ -1135,6 +1135,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
