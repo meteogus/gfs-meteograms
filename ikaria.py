@@ -15,8 +15,8 @@ from collections import defaultdict
 
 
 # Location
-latitude = 38.00
-longitude = 23.75
+latitude = 37.63
+longitude = 26.22
 
 
 # API call parameters
@@ -276,7 +276,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"ATHENS Init: {run_time:%Y-%m-%d} ({run_time:%HZ})",
+    f"IKARIA Init: {run_time:%Y-%m-%d} ({run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
@@ -1100,10 +1100,11 @@ for tick, day in zip(ticks_00z, day_labels):
 
 # PLOT IMAGE
 run_hour = run_time.strftime("%H")
-filename = f"athens{run_hour}.png"
+filename = f"ikaria{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
