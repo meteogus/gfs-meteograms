@@ -15,21 +15,48 @@ from collections import defaultdict
 
 
 
+
+
+
+import re
+
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
 
-# GFS runs at 00Z, 06Z, 12Z, and 18Z
+# GFS run schedule
 gfs_run_hours = [0, 6, 12, 18]
 
-# Find the most recent GFS run
+# Find the most recent run hour
 latest_run_hour = max([h for h in gfs_run_hours if h <= now_utc.hour])
 latest_run_time = now_utc.replace(hour=latest_run_hour, minute=0, second=0, microsecond=0)
 
-# If current time is earlier than first run (00Z), go back one day
+# If before first run, go to yesterday's last run
 if now_utc.hour < gfs_run_hours[0]:
     latest_run_time -= timedelta(days=1)
 
-print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
+# Build NOAA directory URL for the latest run
+run_str = latest_run_time.strftime("%Y%m%d/%H")
+url = f"https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.{latest_run_time:%Y%m%d}/{latest_run_time:%H}/atmos/"
+
+print(f"🌀 Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
+
+# Fetch directory listing
+resp = requests.get(url)
+if resp.status_code == 200:
+    # Match filenames like gfs.t18z.pgrb2.0p25.fXXX
+    matches = re.findall(r"gfs\.t\d{2}z\.pgrb2\.0p25\.f(\d{3})", resp.text)
+    if matches:
+        forecast_hours = sorted(set(int(h) for h in matches))
+        max_hour = max(forecast_hours)
+        print(f"✅ Hours processed so far: {max_hour}h")
+    else:
+        print("⚠️ No forecast files found yet for this run.")
+else:
+    print(f"❌ Could not access NOAA server (status {resp.status_code})")
+
+
+
+
 
 # Location
 latitude = 38.00
@@ -1110,6 +1137,9 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
+
+
 
 
 

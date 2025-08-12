@@ -14,6 +14,23 @@ from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
 
+
+# Get current UTC time
+now_utc = datetime.now(timezone.utc)
+
+# GFS runs at 00Z, 06Z, 12Z, and 18Z
+gfs_run_hours = [0, 6, 12, 18]
+
+# Find the most recent GFS run
+latest_run_hour = max([h for h in gfs_run_hours if h <= now_utc.hour])
+latest_run_time = now_utc.replace(hour=latest_run_hour, minute=0, second=0, microsecond=0)
+
+# If current time is earlier than first run (00Z), go back one day
+if now_utc.hour < gfs_run_hours[0]:
+    latest_run_time -= timedelta(days=1)
+
+print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
+
 # Location
 latitude = 37.63
 longitude = 26.22
@@ -77,19 +94,8 @@ params = {
     ]),
     "forecast_days": 6,
     "timezone": "UTC",
-    "models": "gfs_global"
+    "models": "gfs_seamless"
 }
-
-response = requests.get(url, params=params)
-response.raise_for_status()
-data = response.json()
-
-# Extract first forecast time = run time + 0 forecast lead
-first_forecast_str = data['hourly']['time'][0]
-run_time = pd.to_datetime(first_forecast_str).tz_localize('UTC')
-
-print(f"Latest available GFS run time: {run_time:%Y-%m-%d %HZ}")
-
 
 max_total_wait = 900
 delay_seconds = 60
@@ -166,7 +172,7 @@ from datetime import timedelta
 
 # --- FILTER DATA FROM GFS RUN TIME ONWARD (exactly 5 days = 120 hours) ---
 
-start_time = run_time
+start_time = latest_run_time
 start_index = np.where(times_cloud >= start_time)[0][0]
 
 # Calculate end_index as start_index + 120 (for 120 hours, assuming hourly data)
@@ -276,7 +282,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"IKARIA Init: {run_time:%Y-%m-%d} ({run_time:%HZ})",
+    f"IKARIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
@@ -866,6 +872,7 @@ for x, bft_val in zip(times_num_sel, gusts_bft_sel):
 
 
 
+
 # Section 8: CAPE and Lifted Index
 ax_cape = axs[7]
 ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='#007F7F')
@@ -1099,7 +1106,7 @@ for tick, day in zip(ticks_00z, day_labels):
 
 
 # PLOT IMAGE
-run_hour = run_time.strftime("%H")
+run_hour = latest_run_time.strftime("%H")
 filename = f"ikaria{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
