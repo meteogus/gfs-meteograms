@@ -94,7 +94,7 @@ params = {
     ]),
     "forecast_days": 6,
     "timezone": "UTC",
-    "models": "gfs_seamless"
+    "models": "gfs_global"
 }
 
 max_total_wait = 900
@@ -1148,6 +1148,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
