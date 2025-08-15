@@ -121,7 +121,7 @@ params = {
     ]),
     "forecast_days": 6,
     "timezone": "UTC",
-    "models": "gfs_seamless"
+    "models": "gfs_global"
 }
 
 max_total_wait = 900
@@ -1150,6 +1150,7 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
