@@ -323,19 +323,32 @@ temperature = np.array([
     for p in pressure_levels
 ])
 
-# --- Compute freezing level for every 3-hour timestep (no NaNs).
+
+
+
+
+
+
+# --- Compute freezing level for every 3-hour timestep (safe for None/NaN values).
 # We search for a sign crossing between adjacent levels; if none, we extrapolate.
 freezing_pressures_3h = []
+
 for t_idx in indices_3h:
     temps = temperature[:, t_idx]
 
-    # Search for a crossing between adjacent levels
-    cross_idx = np.where(temps[:-1] * temps[1:] <= 0)[0]  # <= handles exact zero
+    # Convert temps to float array, replace None with NaN
+    temps_array = np.array([t if t is not None else np.nan for t in temps], dtype=float)
+
+    # Mask valid consecutive pairs
+    mask = ~np.isnan(temps_array[:-1]) & ~np.isnan(temps_array[1:])
+
+    # Find zero-crossings only for valid pairs
+    cross_idx = np.where((temps_array[:-1] * temps_array[1:] <= 0) & mask)[0]
+
     if cross_idx.size > 0:
         i = cross_idx[0]
         p1, p2 = pressure_levels[i], pressure_levels[i+1]
-        T1, T2 = temps[i], temps[i+1]
-        # if T1 == T2 use midpoint, else linear interpolation in pressure
+        T1, T2 = temps_array[i], temps_array[i+1]
         if np.isclose(T1, T2):
             p_freeze = 0.5 * (p1 + p2)
         else:
@@ -344,26 +357,22 @@ for t_idx in indices_3h:
         continue
 
     # No crossing found -> either all Temps > 0 (freezing above top) or all Temps < 0 (below bottom)
-    if np.all(temps > 0):
-        # Extrapolate upward using the two top-most levels (second-last, last)
-        p_a, p_b = pressure_levels[-2], pressure_levels[-1]  # e.g. 700, 650
-        T_a, T_b = temps[-2], temps[-1]
+    if np.all(temps_array > 0):
+        p_a, p_b = pressure_levels[-2], pressure_levels[-1]
+        T_a, T_b = temps_array[-2], temps_array[-1]
         if np.isclose(T_a, T_b):
-            p_freeze = p_b  # fallback
+            p_freeze = p_b
         else:
-            # linear extrapolation where T == 0 beyond the top
             p_freeze = p_b + (0.0 - T_b) * (p_a - p_b) / (T_a - T_b)
         freezing_pressures_3h.append(p_freeze)
         continue
 
-    if np.all(temps < 0):
-        # Extrapolate downward using the two bottom-most levels (first, second)
-        p_a, p_b = pressure_levels[0], pressure_levels[1]  # e.g. 1000, 950
-        T_a, T_b = temps[0], temps[1]
+    if np.all(temps_array < 0):
+        p_a, p_b = pressure_levels[0], pressure_levels[1]
+        T_a, T_b = temps_array[0], temps_array[1]
         if np.isclose(T_a, T_b):
             p_freeze = p_a
         else:
-            # linear extrapolation where T == 0 below the bottom
             p_freeze = p_a + (0.0 - T_a) * (p_b - p_a) / (T_b - T_a)
         freezing_pressures_3h.append(p_freeze)
         continue
@@ -372,6 +381,12 @@ for t_idx in indices_3h:
     freezing_pressures_3h.append(pressure_levels[-1])
 
 freezing_pressures_3h = np.array(freezing_pressures_3h, dtype=float)
+
+
+
+
+
+
 
 # --- Display clamp: force any above-top values to exactly top_limit for plotting alignment ---
 top_limit = 650
@@ -1111,6 +1126,7 @@ filename = f"lamia{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
