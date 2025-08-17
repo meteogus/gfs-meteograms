@@ -152,7 +152,7 @@ wind_gusts_10m = get_data("wind_gusts_10m")
 geopotential_1000 = get_data("geopotential_height_1000hPa")
 geopotential_500 = get_data("geopotential_height_500hPa")
 geopotential_850 = get_data("geopotential_height_850hPa")
-freezing_level = get_data("freezing_level_height") / 1000
+freezing_level = get_data("freezing_level_height") 
 Z500_1000 = (geopotential_500 - geopotential_1000) / 10
 Z850_1000 = (geopotential_850 - geopotential_1000) / 10
 
@@ -328,58 +328,76 @@ temperature = np.array([
 
 
 
-# --- Compute freezing level for every 3-hour timestep (safe for None/NaN values).
-# We search for a sign crossing between adjacent levels; if none, we extrapolate.
+# --- Compute freezing level for every 3-hour timestep (safe for None/NaN values)
 freezing_pressures_3h = []
 
 for t_idx in indices_3h:
     temps = temperature[:, t_idx]
 
-    # Convert temps to float array, replace None with NaN
+    # Convert temps to float array, replace None with NaN (handle missing values)
     temps_array = np.array([t if t is not None else np.nan for t in temps], dtype=float)
 
-    # Mask valid consecutive pairs
+    # Skip if all NaN (no valid temperature data)
+    if np.all(np.isnan(temps_array)):
+        freezing_pressures_3h.append(np.nan)
+        continue
+
+    # Mask valid consecutive pairs (avoid NaNs when checking zero crossings)
     mask = ~np.isnan(temps_array[:-1]) & ~np.isnan(temps_array[1:])
 
-    # Find zero-crossings only for valid pairs
+    # Find zero-crossings only for valid pairs (where temp changes sign)
     cross_idx = np.where((temps_array[:-1] * temps_array[1:] <= 0) & mask)[0]
 
     if cross_idx.size > 0:
         i = cross_idx[0]
         p1, p2 = pressure_levels[i], pressure_levels[i+1]
         T1, T2 = temps_array[i], temps_array[i+1]
-        if np.isclose(T1, T2):
+        if np.isclose(T1, T2, equal_nan=False):  # (almost equal temps)
             p_freeze = 0.5 * (p1 + p2)
         else:
-            p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1)
+            p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1)  # (linear interpolation)
         freezing_pressures_3h.append(p_freeze)
         continue
 
-    # No crossing found -> either all Temps > 0 (freezing above top) or all Temps < 0 (below bottom)
-    if np.all(temps_array > 0):
-        p_a, p_b = pressure_levels[-2], pressure_levels[-1]
-        T_a, T_b = temps_array[-2], temps_array[-1]
-        if np.isclose(T_a, T_b):
-            p_freeze = p_b
+    # Remove NaNs for sign check (check extremes if no zero crossing)
+    valid_temps = temps_array[~np.isnan(temps_array)]
+
+    # If all valid Temps > 0 -> freezing above top (above highest pressure level)
+    if np.all(valid_temps > 0):
+        if len(valid_temps) >= 2:
+            p_a, p_b = pressure_levels[-2], pressure_levels[-1]
+            T_a, T_b = temps_array[-2], temps_array[-1]
+            if np.isclose(T_a, T_b, equal_nan=False):
+                p_freeze = p_b
+            else:
+                p_freeze = p_b + (0.0 - T_b) * (p_a - p_b) / (T_a - T_b)  # (extrapolate above)
         else:
-            p_freeze = p_b + (0.0 - T_b) * (p_a - p_b) / (T_a - T_b)
+            p_freeze = pressure_levels[-1]
         freezing_pressures_3h.append(p_freeze)
         continue
 
-    if np.all(temps_array < 0):
-        p_a, p_b = pressure_levels[0], pressure_levels[1]
-        T_a, T_b = temps_array[0], temps_array[1]
-        if np.isclose(T_a, T_b):
-            p_freeze = p_a
+    # If all valid Temps < 0 -> freezing below bottom (below lowest pressure level)
+    if np.all(valid_temps < 0):
+        if len(valid_temps) >= 2:
+            p_a, p_b = pressure_levels[0], pressure_levels[1]
+            T_a, T_b = temps_array[0], temps_array[1]
+            if np.isclose(T_a, T_b, equal_nan=False):
+                p_freeze = p_a
+            else:
+                p_freeze = p_a + (0.0 - T_a) * (p_b - p_a) / (T_b - T_a)  # (extrapolate below)
         else:
-            p_freeze = p_a + (0.0 - T_a) * (p_b - p_a) / (T_b - T_a)
+            p_freeze = pressure_levels[0]
         freezing_pressures_3h.append(p_freeze)
         continue
 
-    # Fallback (shouldn't be reached)
-    freezing_pressures_3h.append(pressure_levels[-1])
+    # Fallback (shouldn't be reached) (if something went wrong)
+    freezing_pressures_3h.append(np.nan)
 
 freezing_pressures_3h = np.array(freezing_pressures_3h, dtype=float)
+
+# Print freezing levels only (without "between" info)
+for i, p in enumerate(freezing_pressures_3h):
+    print(f"t={i*3}h: Freezing level = {p:.2f} hPa")
 
 
 
@@ -613,7 +631,7 @@ time_nums_3h = time_nums[::3]
 rain_3h = precipitation[::3]
 showers_3h = showers[::3]
 snowfall_3h = snowfall[::3]
-freezing_3h = freezing_level[::3]
+freezing_3h_km = freezing_level[::3]/1000
 
 # Plot precipitation bars
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
@@ -646,7 +664,7 @@ ax_frlabel.yaxis.tick_right()
 # Annotate freezing level every 6 hours if < 2 km
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
 for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
-    val = freezing_3h[i]
+    val = freezing_3h_km[i]
     if val < 2.0: # Select minimum threshold to plot (km)
         x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
         ax_precip.text(
@@ -1125,6 +1143,7 @@ filename = f"patra{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
