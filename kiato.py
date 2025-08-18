@@ -79,8 +79,13 @@ params = {
         "showers",         
         "snowfall",
         "geopotential_height_1000hPa",
-        "geopotential_height_500hPa",
+        "geopotential_height_950hPa",
+        "geopotential_height_900hPa",
         "geopotential_height_850hPa",
+        "geopotential_height_800hPa",
+        "geopotential_height_700hPa",
+        "geopotential_height_600hPa",
+        "geopotential_height_500hPa",
         "freezing_level_height",
         "temperature_1000hPa",
         "temperature_950hPa",
@@ -89,7 +94,7 @@ params = {
         "temperature_800hPa",
         "temperature_750hPa",
         "temperature_700hPa",
-        "temperature_650hPa",
+        "temperature_600hPa",
         "temperature_500hPa"
     ]),
     "forecast_days": 6,
@@ -145,30 +150,58 @@ temperature_850 = get_data("temperature_850hPa")
 temperature_800 = get_data("temperature_800hPa")
 temperature_750 = get_data("temperature_750hPa")
 temperature_700 = get_data("temperature_700hPa")
-temperature_650 = get_data("temperature_650hPa")
+temperature_600 = get_data("temperature_600hPa")
 temperature_500 = get_data("temperature_500hPa")
 wind_gusts_10m = get_data("wind_gusts_10m")
 
 geopotential_1000 = get_data("geopotential_height_1000hPa")
-geopotential_500 = get_data("geopotential_height_500hPa")
+geopotential_950 = get_data("geopotential_height_950hPa")
+geopotential_900 = get_data("geopotential_height_900hPa")
 geopotential_850 = get_data("geopotential_height_850hPa")
+geopotential_800 = get_data("geopotential_height_800hPa")
+geopotential_700 = get_data("geopotential_height_700hPa")
+geopotential_600 = get_data("geopotential_height_600hPa")
+geopotential_500 = get_data("geopotential_height_500hPa")
+
 freezing_level = get_data("freezing_level_height") 
 Z500_1000 = (geopotential_500 - geopotential_1000) / 10
 Z850_1000 = (geopotential_850 - geopotential_1000) / 10
 
+geo_heights = np.array([
+    geopotential_1000,
+    geopotential_950,
+    geopotential_900,
+    geopotential_850,
+    geopotential_800,
+    geopotential_700,
+    geopotential_600
+])  # shape: [levels, time]
 
+pressures = np.array([1000, 950, 900, 850, 800, 700, 600])  # hPa
 
+freeze_h = np.array(freezing_level)  # meters
+freeze_p = np.zeros_like(freeze_h, dtype=float)
 
+for i, h in enumerate(freeze_h):
+    # Vertical profile of this timestep
+    prof_h = geo_heights[:, i]   # heights in meters
+    prof_p = pressures           # pressures in hPa (same order)
 
+    # Ensure increasing order in height
+    sort_idx = np.argsort(prof_h)
+    prof_h = prof_h[sort_idx]
+    prof_p = prof_p[sort_idx]
 
+    # Interpolate pressure at freezing height
+    if h <= prof_h[0]:
+        freeze_p[i] = prof_p[0]   # below lowest model level
+    elif h >= prof_h[-1]:
+        freeze_p[i] = prof_p[-1]  # above highest model level
+    else:
+        freeze_p[i] = np.interp(h, prof_h, prof_p)
 
+freezing_level_hpa = freeze_p
 
-
-
-
-
-
-from datetime import timedelta
 
 # --- FILTER DATA FROM GFS RUN TIME ONWARD (exactly 5 days = 120 hours) ---
 
@@ -214,6 +247,7 @@ geopotential_1000 = geopotential_1000[start_index:end_index + 1]
 geopotential_500 = geopotential_500[start_index:end_index + 1]
 geopotential_850 = geopotential_850[start_index:end_index + 1]
 freezing_level = freezing_level[start_index:end_index + 1]
+freezing_level_hpa= freezing_level_hpa[start_index:end_index + 1]
 Z500_1000 = Z500_1000[start_index:end_index + 1]
 Z850_1000 = Z850_1000[start_index:end_index + 1]
 
@@ -317,99 +351,6 @@ times_3h = [times[i] for i in indices_3h]
 time_nums_3h = mdates.date2num(times_3h)
 time_nums_all = mdates.date2num(times)
 
-# --- 2D temperature array (pressure x time) ---
-temperature = np.array([
-    get_data(f"temperature_{p}hPa")[start_index:end_index+1]
-    for p in pressure_levels
-])
-
-
-
-
-
-
-
-# --- Compute freezing level for every 3-hour timestep (safe for None/NaN values)
-freezing_pressures_3h = []
-
-for t_idx in indices_3h:
-    temps = temperature[:, t_idx]
-
-    # Convert temps to float array, replace None with NaN (handle missing values)
-    temps_array = np.array([t if t is not None else np.nan for t in temps], dtype=float)
-
-    # Skip if all NaN (no valid temperature data)
-    if np.all(np.isnan(temps_array)):
-        freezing_pressures_3h.append(np.nan)
-        continue
-
-    # Mask valid consecutive pairs (avoid NaNs when checking zero crossings)
-    mask = ~np.isnan(temps_array[:-1]) & ~np.isnan(temps_array[1:])
-
-    # Find zero-crossings only for valid pairs (where temp changes sign)
-    cross_idx = np.where((temps_array[:-1] * temps_array[1:] <= 0) & mask)[0]
-
-    if cross_idx.size > 0:
-        i = cross_idx[0]
-        p1, p2 = pressure_levels[i], pressure_levels[i+1]
-        T1, T2 = temps_array[i], temps_array[i+1]
-        if np.isclose(T1, T2, equal_nan=False):  # (almost equal temps)
-            p_freeze = 0.5 * (p1 + p2)
-        else:
-            p_freeze = p1 + (0.0 - T1) * (p2 - p1) / (T2 - T1)  # (linear interpolation)
-        freezing_pressures_3h.append(p_freeze)
-        continue
-
-    # Remove NaNs for sign check (check extremes if no zero crossing)
-    valid_temps = temps_array[~np.isnan(temps_array)]
-
-    # If all valid Temps > 0 -> freezing above top (above highest pressure level)
-    if np.all(valid_temps > 0):
-        if len(valid_temps) >= 2:
-            p_a, p_b = pressure_levels[-2], pressure_levels[-1]
-            T_a, T_b = temps_array[-2], temps_array[-1]
-            if np.isclose(T_a, T_b, equal_nan=False):
-                p_freeze = p_b
-            else:
-                p_freeze = p_b + (0.0 - T_b) * (p_a - p_b) / (T_a - T_b)  # (extrapolate above)
-        else:
-            p_freeze = pressure_levels[-1]
-        freezing_pressures_3h.append(p_freeze)
-        continue
-
-    # If all valid Temps < 0 -> freezing below bottom (below lowest pressure level)
-    if np.all(valid_temps < 0):
-        if len(valid_temps) >= 2:
-            p_a, p_b = pressure_levels[0], pressure_levels[1]
-            T_a, T_b = temps_array[0], temps_array[1]
-            if np.isclose(T_a, T_b, equal_nan=False):
-                p_freeze = p_a
-            else:
-                p_freeze = p_a + (0.0 - T_a) * (p_b - p_a) / (T_b - T_a)  # (extrapolate below)
-        else:
-            p_freeze = pressure_levels[0]
-        freezing_pressures_3h.append(p_freeze)
-        continue
-
-    # Fallback (shouldn't be reached) (if something went wrong)
-    freezing_pressures_3h.append(np.nan)
-
-freezing_pressures_3h = np.array(freezing_pressures_3h, dtype=float)
-
-# Print freezing levels only (without "between" info)
-for i, p in enumerate(freezing_pressures_3h):
-    print(f"t={i*3}h: Freezing level = {p:.2f} hPa")
-
-
-
-
-
-
-
-# --- Display clamp: force any above-top values to exactly top_limit for plotting alignment ---
-top_limit = 650
-# Values < top_limit mean 'above the top' because pressure decreases with altitude.
-p_display = np.where(freezing_pressures_3h < top_limit, top_limit, freezing_pressures_3h)
 
 # --- Meshgrid for humidity plotting ---
 T, P = np.meshgrid(time_nums_all, pressure_levels)
@@ -444,9 +385,9 @@ for i, p in enumerate(pressure_levels):
 contour_lines = ax_humidity.contour(T, P, humidity, levels=bounds[1:], colors='grey', linewidths=1, linestyles='--')
 ax_humidity.clabel(contour_lines, fmt='%d', fontsize=8, inline=True, colors='#333333')
 
-# --- Freezing level line ---
+freezing_level_hpa_3h = freezing_level_hpa[::3]  # pick every 3rd element
 ax_humidity.plot(
-    time_nums_3h, p_display,  # <-- use clamped display values
+    time_nums_3h, freezing_level_hpa_3h,
     color='white', linewidth=0.8, solid_capstyle='round', zorder=30,
     path_effects=[
         pe.Stroke(linewidth=1.8, foreground='black'),
@@ -457,6 +398,7 @@ ax_humidity.plot(
 )
 
 # --- Draw "0" boxes at 15Z only when freezing level is visible inside section (>= top_limit) ---
+top_limit=650
 bbox_props = dict(boxstyle="round,pad=0.02", fc="black", ec="black", lw=1)
 # Ensure final ylim is used for nudging
 y0, y1 = ax_humidity.get_ylim()
@@ -465,7 +407,7 @@ edge_margin = (vis_ymax - vis_ymin) * 0.03
 
 for i, dt in enumerate(times_3h):
     if getattr(dt, "hour", None) == 15 and getattr(dt, "minute", None) in (0, None):
-        pv = freezing_pressures_3h[i]
+        pv = freezing_level_hpa[i]
         if pv >= top_limit:  # visible inside section
             y_val = pv
             # nudge down if too close to top edge
@@ -474,6 +416,12 @@ for i, dt in enumerate(times_3h):
             ax_humidity.text(mdates.date2num(dt), y_val, "0",
                              fontsize=8, color='white', ha='center', va='center',
                              bbox=bbox_props, zorder=50)
+
+
+
+# --- Print freezing level at 3-hourly steps ---
+for dt, p in zip(times_3h, freezing_level_hpa_3h):
+    print(f"{dt}: {p:.1f} hPa")
 
 
 
@@ -1144,6 +1092,7 @@ filename = f"kiato{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
