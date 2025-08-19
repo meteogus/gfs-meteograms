@@ -351,6 +351,11 @@ times_3h = [times[i] for i in indices_3h]
 time_nums_3h = mdates.date2num(times_3h)
 time_nums_all = mdates.date2num(times)
 
+# --- Display clamp: force any above-top values to exactly top_limit for plotting alignment ---
+top_limit = 650
+# Values < top_limit mean 'above the top' because pressure decreases with altitude.
+p_display = np.where(freezing_level_hpa < top_limit, top_limit, freezing_level_hpa)
+
 
 # --- Meshgrid for humidity plotting ---
 T, P = np.meshgrid(time_nums_all, pressure_levels)
@@ -397,8 +402,7 @@ ax_humidity.plot(
     ]
 )
 
-# --- Draw "0" boxes at 15Z only when freezing level is visible inside section (>= top_limit) ---
-top_limit=650
+# --- Draw "0" boxes at 00Z only when freezing level is visible inside section (>= top_limit) ---
 bbox_props = dict(boxstyle="round,pad=0.02", fc="black", ec="black", lw=1)
 # Ensure final ylim is used for nudging
 y0, y1 = ax_humidity.get_ylim()
@@ -406,8 +410,8 @@ vis_ymin, vis_ymax = min(y0, y1), max(y0, y1)
 edge_margin = (vis_ymax - vis_ymin) * 0.03
 
 for i, dt in enumerate(times_3h):
-    if getattr(dt, "hour", None) == 15 and getattr(dt, "minute", None) in (0, None):
-        pv = freezing_level_hpa[i]
+    if getattr(dt, "hour", None) == 00 and getattr(dt, "minute", None) in (0, None):
+        pv = freezing_level_hpa_3h[i]
         if pv >= top_limit:  # visible inside section
             y_val = pv
             # nudge down if too close to top edge
@@ -1116,6 +1120,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
