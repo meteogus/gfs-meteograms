@@ -619,7 +619,7 @@ ax_frlabel.yaxis.tick_right()
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
 for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
     val = freezing_3h_km[i]
-    if val < 2.0: # Select minimum threshold to plot (km)
+    if val <= 1.7: # Select minimum threshold to plot (km)
         x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
         ax_precip.text(
             x, y_max - 0.5, f"{val:.1f}",
@@ -1097,6 +1097,7 @@ filename = f"patra{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
