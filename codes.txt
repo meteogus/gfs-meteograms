@@ -1,0 +1,5 @@
+FTP_HOST = "grhost.info"             # e.g. ftp.example.com
+FTP_USER = "parognosis"               # e.g. parognosis_user
+FTP_PASS = "#6934225193#"               # e.g. secretpassword
+FTP_FOLDER = "meteograms"        # folder path on your server
+
