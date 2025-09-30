@@ -247,12 +247,20 @@ ax_precip = axs[1]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
-# 3-hourly data
-time_nums_3h = time_nums[::3]
-rain_3h = precipitation[::3]
-showers_3h = showers[::3]
-snowfall_3h = snowfall[::3]
-freezing_3h = freezing_level[::3]
+# Convert to numpy arrays
+rain = np.array(precipitation)          # rain (mm per hour)
+showers_arr = np.array(showers)         # showers (mm per hour)
+snowfall_arr = np.array(snowfall)       # snowfall (mm per hour)
+freezing_arr = np.array(freezing_level) # freezing level (m)
+time_arr = np.array(time_nums)
+
+# Reshape into 3h blocks and sum
+n = (len(rain) // 3) * 3
+rain_3h = rain[:n].reshape(-1, 3).sum(axis=1)
+showers_3h = showers_arr[:n].reshape(-1, 3).sum(axis=1)
+snowfall_3h = snowfall_arr[:n].reshape(-1, 3).sum(axis=1)
+freezing_3h_km = (freezing_arr[:n].reshape(-1, 3).mean(axis=1)) / 1000  # average freezing level
+time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]  # timestamp of first hour in block
 
 # Plot precipitation bars
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
@@ -559,6 +567,7 @@ for tick, label in zip(ticks_00z, labels_00z):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
