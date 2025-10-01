@@ -242,7 +242,7 @@ ax_cloud.grid(axis='x', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alph
 
 
 
-# Section 2: Precipitation with Freezing Level values (every 6h, first inside section)
+# --- Section 2: Precipitation with Freezing Level values (every 6h) ---
 ax_precip = axs[1]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
@@ -254,12 +254,12 @@ snowfall_arr = np.array(snowfall)       # snowfall (mm per hour)
 freezing_arr = np.array(freezing_level) # freezing level (m)
 time_arr = np.array(time_nums)
 
-# Reshape into 3h blocks and sum
+# Reshape into 3h blocks and sum/average
 n = (len(rain) // 3) * 3
 rain_3h = rain[:n].reshape(-1, 3).sum(axis=1)
 showers_3h = showers_arr[:n].reshape(-1, 3).sum(axis=1)
 snowfall_3h = snowfall_arr[:n].reshape(-1, 3).sum(axis=1)
-freezing_3h_km = (freezing_arr[:n].reshape(-1, 3).mean(axis=1)) / 1000  # average freezing level
+freezing_3h_km = freezing_arr[:n].reshape(-1, 3).mean(axis=1) / 1000.0  # average freezing level in km
 time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]  # timestamp of first hour in block
 
 # Plot precipitation bars
@@ -267,12 +267,7 @@ ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0
 ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 
-# Plot Freezing level line
-# ax_frlabel = ax_precip.twinx()
-# ax_frlabel.plot(time_nums_3h, freezing_3h, color='#0072B2', linestyle='-', linewidth=0.7)
-# ax_frlabel.set_yticks([])
-
-# Y-axis setup
+# Y-axis setup for precipitation
 ax_precip.set_ylabel('Precip.\n(mm)', fontsize=12, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
@@ -283,26 +278,26 @@ y_max = y_step * np.ceil((max_precip + 2) / y_step)
 ax_precip.set_ylim(0, y_max)
 ax_precip.set_yticks(np.arange(y_step, y_max + y_step, y_step))
 
-# Right-side label for freezing level
+# Right-side y-axis for freezing level (km)
 ax_frlabel = ax_precip.twinx()
-ax_frlabel.set_ylim(ax_precip.get_ylim())
+ax_frlabel.plot(time_nums_3h, freezing_3h_km, color='#0072B2', linestyle='-', linewidth=0.8, label="Freezing level")
 ax_frlabel.set_ylabel("Fr.Level\n(km)", fontsize=12, color='blue', rotation=90)
 ax_frlabel.yaxis.set_label_position("right")
 ax_frlabel.yaxis.tick_right()
+ax_frlabel.tick_params(axis='y', labelcolor='blue')
 
-# Annotate freezing level every 6 hours if < 2 km
-offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
-for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
-    val = freezing_3h[i]
-    if val <= 1.7: # Select minimum threshold to plot (km)
-        x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
-        ax_precip.text(
-            x, y_max - 0.5, f"{val:.1f}",
-            ha='center', va='top',
-            fontsize=12, color='blue',
-            #fontweight='bold',
-            bbox=dict(facecolor='white', edgecolor='none', alpha=0.7, pad=1.5)
-        )
+# Annotate freezing level every 6 hours
+offset = (time_nums_3h[1] - time_nums_3h[0]) / 2
+for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h blocks)
+    val = freezing_3h_km[i]
+    x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
+    ax_frlabel.text(
+        x, val, f"{val:.1f}",
+        ha='center', va='bottom',
+        fontsize=10, color='blue',
+        bbox=dict(facecolor='white', edgecolor='none', alpha=0.6, pad=1.5)
+    )
+
 
 
 
@@ -567,6 +562,7 @@ for tick, label in zip(ticks_00z, labels_00z):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("kiato10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
