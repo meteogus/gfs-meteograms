@@ -51,7 +51,6 @@ jobs:
           python salonica.py
           python ikaria.py
           python london.py
-          python kiato10d.py
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
@@ -80,8 +79,7 @@ jobs:
               f"patra{run_hour}.png",
               f"salonica{run_hour}.png",
               f"ikaria{run_hour}.png",
-              "london.png",
-              "kiato10d.png"
+              "london.png"
           ]
 
           host = os.getenv('SFTP_HOST')
