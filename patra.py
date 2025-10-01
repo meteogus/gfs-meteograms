@@ -622,6 +622,7 @@ ax_frlabel.set_ylim(ax_precip.get_ylim())
 ax_frlabel.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue', rotation=90)
 ax_frlabel.yaxis.set_label_position("right")
 ax_frlabel.yaxis.tick_right()
+ax_frlabel.tick_params(right=False, labelright=False)  # Hide right ticks and labels
 
 # Annotate freezing level every 6 hours if < 2 km
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
@@ -1105,6 +1106,7 @@ filename = f"patra{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
