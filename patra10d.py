@@ -157,7 +157,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"PATRA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"LAMIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=12, fontweight='bold', color='black', y=1.4
 )
 ax_cloud.tick_params(axis='y', colors='black')
@@ -228,7 +228,10 @@ ax_pressure.set_ylim(pmin_rounded, pmax_rounded)
 yticks = np.arange(pmin_rounded, pmax_rounded + 1, step)
 ax_pressure.set_yticks(yticks)
 
-
+# Hide the first (bottom) tick label
+yticklabels = [str(t) for t in yticks]
+yticklabels[0] = ''
+ax_pressure.set_yticklabels(yticklabels)
 
 
 
@@ -245,17 +248,12 @@ ax_temp.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), al
 # --- Y-axis limits and ticks ---
 tmin_rounded = int(np.floor(temperature_2m.min() / 2.0) * 2)
 tmax_actual = temperature_2m.max()
-tmax_with_margin = int(np.ceil(tmax_actual)) + 4   # add +4 margin for annotation boxes
+tmax_with_margin = int(np.ceil(tmax_actual)) + 5   # add +5 margin for annotation boxes
 
 ax_temp.set_ylim(tmin_rounded, tmax_with_margin)
 
-yticks = np.arange(tmin_rounded, tmax_with_margin + 1, 2)
+yticks = np.arange(tmin_rounded, tmax_with_margin + 1, 4)
 ax_temp.set_yticks(yticks)
-
-# Hide the top tick label
-yticklabels = [str(t) for t in yticks]
-yticklabels[-1] = ''
-ax_temp.set_yticklabels(yticklabels)
 
 # --- Plot daily maxima between 06–18 UTC ---
 import pandas as pd
@@ -265,7 +263,7 @@ df_temp = pd.DataFrame({'temp': temperature_2m}, index=times_index)
 
 grouped = df_temp.groupby(df_temp.index.date)
 
-y_offset = 0.5  # offset above the line
+y_offset = 1.5  # offset above the line
 
 for day, group in grouped:
     group_day = group[(group.index.hour >= 6) & (group.index.hour <= 18)]
@@ -425,11 +423,10 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 # PLOT IMAGE
 run_hour = latest_run_time.strftime("%H")
-filename = f"patra10d_{run_hour}.png"
+filename = f"lamia10d_{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0.05)
 plt.close(fig)
-
 
 
 
