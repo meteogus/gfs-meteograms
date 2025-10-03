@@ -50,6 +50,9 @@ jobs:
           python patra.py
           python salonica.py
           python ikaria.py
+          python athens10d.py
+          python kiato10d.py
+          python lamia10d.py
           python london.py
         env:
           RUN_HOUR: ${{ env.run_hour }}
@@ -79,6 +82,9 @@ jobs:
               f"patra{run_hour}.png",
               f"salonica{run_hour}.png",
               f"ikaria{run_hour}.png",
+              f"athens10d_{run_hour}.png",
+              f"kiato10d_{run_hour}.png",
+              f"lamia10d_{run_hour}.png",
               "london.png"
           ]
 
