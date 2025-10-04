@@ -54,6 +54,7 @@ jobs:
           python lamia10d.py
           python patra10d.py
           python salonica10d.py
+          python ikaria10d.py
           python agrinio
           python chania
           python florina
@@ -95,14 +96,15 @@ jobs:
               f"lamia10d_{run_hour}.png",
               f"patra10d_{run_hour}.png",
               f"salonica10d_{run_hour}.png",
+              f"ikaria10d_{run_hour}.png",
               "agrinio.png",
               "chania.png",
               "florina.png",
               "heraklion.png",
               "ikaria.png",
-              "ioannina.png"
-              "kefalonia.png"
-              "larisa.png"
+              "ioannina.png",
+              "kefalonia.png",
+              "larisa.png",
               "trikala.png"
           ]
 
