@@ -15,52 +15,25 @@ from collections import defaultdict
 
 
 
-
-
-
-import re
-
 # Get current UTC time
 now_utc = datetime.now(timezone.utc)
 
-# GFS run schedule
+# GFS runs at 00Z, 06Z, 12Z, and 18Z
 gfs_run_hours = [0, 6, 12, 18]
 
-# Find the most recent run hour
+# Find the most recent GFS run
 latest_run_hour = max([h for h in gfs_run_hours if h <= now_utc.hour])
 latest_run_time = now_utc.replace(hour=latest_run_hour, minute=0, second=0, microsecond=0)
 
-# If before first run, go to yesterday's last run
+# If current time is earlier than first run (00Z), go back one day
 if now_utc.hour < gfs_run_hours[0]:
     latest_run_time -= timedelta(days=1)
 
-# Build NOAA directory URL for the latest run
-run_str = latest_run_time.strftime("%Y%m%d/%H")
-url = f"https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.{latest_run_time:%Y%m%d}/{latest_run_time:%H}/atmos/"
-
-print(f"🌀 Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
-
-# Fetch directory listing
-resp = requests.get(url)
-if resp.status_code == 200:
-    # Match filenames like gfs.t18z.pgrb2.0p25.fXXX
-    matches = re.findall(r"gfs\.t\d{2}z\.pgrb2\.0p25\.f(\d{3})", resp.text)
-    if matches:
-        forecast_hours = sorted(set(int(h) for h in matches))
-        max_hour = max(forecast_hours)
-        print(f"✅ Hours processed so far: {max_hour}h")
-    else:
-        print("⚠️ No forecast files found yet for this run.")
-else:
-    print(f"❌ Could not access NOAA server (status {resp.status_code})")
-
-
-
-
+print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.00
-longitude = 23.75
+latitude = 38
+longitude = 22
 
 
 # API call parameters
@@ -607,12 +580,20 @@ ax_precip = axs[4]
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
-# 3-hourly data
-time_nums_3h = time_nums[::3]
-rain_3h = precipitation[::3]
-showers_3h = showers[::3]
-snowfall_3h = snowfall[::3]
-freezing_3h_km = freezing_level[::3]/1000
+# Convert to numpy arrays
+rain = np.array(precipitation)          # rain (mm per hour)
+showers_arr = np.array(showers)         # showers (mm per hour)
+snowfall_arr = np.array(snowfall)       # snowfall (mm per hour)
+freezing_arr = np.array(freezing_level) # freezing level (m)
+time_arr = np.array(time_nums)
+
+# Reshape into 3h blocks and sum
+n = (len(rain) // 3) * 3
+rain_3h = rain[:n].reshape(-1, 3).sum(axis=1)
+showers_3h = showers_arr[:n].reshape(-1, 3).sum(axis=1)
+snowfall_3h = snowfall_arr[:n].reshape(-1, 3).sum(axis=1)
+freezing_3h_km = (freezing_arr[:n].reshape(-1, 3).mean(axis=1)) / 1000  # average freezing level
+time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]  # timestamp of first hour in block
 
 # Plot precipitation bars
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
@@ -641,12 +622,13 @@ ax_frlabel.set_ylim(ax_precip.get_ylim())
 ax_frlabel.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue', rotation=90)
 ax_frlabel.yaxis.set_label_position("right")
 ax_frlabel.yaxis.tick_right()
+ax_frlabel.tick_params(right=False, labelright=False)  # Hide right ticks and labels
 
 # Annotate freezing level every 6 hours if < 2 km
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
 for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
     val = freezing_3h_km[i]
-    if val < 2.0: # Select minimum threshold to plot (km)
+    if val <= 1.7: # Select minimum threshold to plot (km)
         x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
         ax_precip.text(
             x, y_max - 0.5, f"{val:.1f}",
@@ -1123,6 +1105,8 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
+
 
 
 

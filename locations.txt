@@ -43,3 +43,58 @@ LONDON
 ======
 latitude = 51.54
 longitude = -0.17
+
+
+IOANNINA
+========
+latitude = 39.66
+longitude = 20.85
+
+
+
+AGRINIO
+========
+latitude = 38.62
+longitude = 21.41
+
+
+
+FLORINA
+========
+latitude = 40.78
+longitude = 21.41
+
+
+
+LARISA
+========
+latitude = 39.63
+longitude = 22.41
+
+
+
+TRIKALA
+========
+latitude = 39.55
+longitude = 21.76
+
+
+
+KEFALONIA
+=========
+latitude = 38.17
+longitude = 20.49
+
+
+
+HERAKLION
+=========
+latitude = 35.34
+longitude = 25.13
+
+
+
+CHANIA
+=======
+latitude = 35.51
+longitude = 24.02
