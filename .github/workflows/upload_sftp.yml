@@ -55,16 +55,16 @@ jobs:
           python patra10d.py
           python salonica10d.py
           python ikaria10d.py
-          python agrinio
-          python chania
-          python florina
-          python heraklion
-          python ikaria
-          python tinos
-          python ioannina
-          python kefalonia
-          python larisa
-          python trikala
+          python agrinio.py
+          python chania.py
+          python florina.py
+          python heraklion.py
+          python ikaria.py
+          python tinos.py
+          python ioannina.py
+          python kefalonia.py
+          python larisa.py
+          python trikala.py
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
