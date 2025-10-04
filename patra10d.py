@@ -157,7 +157,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"LAMIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"PATRA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=12, fontweight='bold', color='black', y=1.4
 )
 ax_cloud.tick_params(axis='y', colors='black')
@@ -423,7 +423,7 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 # PLOT IMAGE
 run_hour = latest_run_time.strftime("%H")
-filename = f"lamia10d_{run_hour}.png"
+filename = f"patra10d_{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0.05)
 plt.close(fig)
