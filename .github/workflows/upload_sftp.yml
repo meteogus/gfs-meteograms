@@ -49,13 +49,20 @@ jobs:
           python lamia.py
           python patra.py
           python salonica.py
-          python ikaria.py
           python athens10d.py
           python kiato10d.py
           python lamia10d.py
           python patra10d.py
           python salonica10d.py
-          python london.py
+          python agrinio
+          python chania
+          python florina
+          python heraklion
+          python ikaria
+          python ioannina
+          python kefalonia
+          python larisa
+          python trikala
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
@@ -83,13 +90,20 @@ jobs:
               f"lamia{run_hour}.png",
               f"patra{run_hour}.png",
               f"salonica{run_hour}.png",
-              f"ikaria{run_hour}.png",
               f"athens10d_{run_hour}.png",
               f"kiato10d_{run_hour}.png",
               f"lamia10d_{run_hour}.png",
               f"patra10d_{run_hour}.png",
               f"salonica10d_{run_hour}.png",
-              "london.png"
+              "agrinio.png",
+              "chania.png",
+              "florina.png",
+              "heraklion.png",
+              "ikaria.png",
+              "ioannina.png"
+              "kefalonia.png"
+              "larisa.png"
+              "trikala.png"
           ]
 
           host = os.getenv('SFTP_HOST')
