@@ -422,5 +422,5 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 # PLOT IMAGE
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("ikaria10d.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig("ikaria10d.png", dpi=96, bbox_inches='tight', pad_inches=0.05)
 plt.close(fig)
