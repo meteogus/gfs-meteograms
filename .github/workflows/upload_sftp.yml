@@ -60,6 +60,7 @@ jobs:
           python florina
           python heraklion
           python ikaria
+          python tinos
           python ioannina
           python kefalonia
           python larisa
@@ -102,6 +103,7 @@ jobs:
               "florina.png",
               "heraklion.png",
               "ikaria.png",
+              "tinos.png",
               "ioannina.png",
               "kefalonia.png",
               "larisa.png",
