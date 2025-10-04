@@ -32,8 +32,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 37.63
-longitude = 26.22
+latitude = 38.17
+longitude = 20.49
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -315,7 +315,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"IKARIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"KEFALONIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
@@ -1126,7 +1126,7 @@ for tick, day in zip(ticks_00z, day_labels):
 
 # PLOT IMAGE
 plt.subplots_adjust(hspace=0.05)
-plt.savefig("ikaria.png", dpi=96, bbox_inches='tight', pad_inches=0)
+plt.savefig("kefalonia.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
 
 
