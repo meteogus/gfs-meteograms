@@ -98,3 +98,9 @@ CHANIA
 =======
 latitude = 35.51
 longitude = 24.02
+
+
+TINOS
+=======
+latitude = 37.54
+longitude = 25.16
