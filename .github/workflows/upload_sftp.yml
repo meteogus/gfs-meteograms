@@ -96,7 +96,6 @@ jobs:
               f"lamia10d_{run_hour}.png",
               f"patra10d_{run_hour}.png",
               f"salonica10d_{run_hour}.png",
-              f"ikaria10d_{run_hour}.png",
               "agrinio.png",
               "chania.png",
               "florina.png",
@@ -105,7 +104,8 @@ jobs:
               "ioannina.png",
               "kefalonia.png",
               "larisa.png",
-              "trikala.png"
+              "trikala.png",
+              "ikaria10d.png"
           ]
 
           host = os.getenv('SFTP_HOST')
