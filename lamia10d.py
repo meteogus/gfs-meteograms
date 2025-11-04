@@ -193,16 +193,9 @@ ax_precip.set_ylabel('Precip.\n(mm)', fontsize=10, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 
-# --- Adjust y-axis scale (start at 0, but no 0 tick label) ---
-max_precip = max(np.max(rain_3h), np.max(showers_3h), np.max(snowfall_3h))
-y_step = 2 if max_precip <= 10 else 5 if max_precip <= 30 else 10
-y_max = y_step * np.ceil((max_precip + 2) / y_step)
-
-ax_precip.set_ylim(0, y_max)
-ax_precip.set_yticks(np.arange(y_step, y_max + y_step, y_step))
-
-# Fix right border:
-
+# --- Fixed y-axis scale 0–17 mm, ticks at 5, 10, 15 ---
+ax_precip.set_ylim(0, 17)
+ax_precip.set_yticks([5, 10, 15])
 
 
 
@@ -427,6 +420,7 @@ filename = f"lamia10d_{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0.05)
 plt.close(fig)
+
 
 
 
