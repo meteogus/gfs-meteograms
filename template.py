@@ -32,8 +32,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38
-longitude = 22
+latitude = 38.00
+longitude = 23.75
 
 
 # API call parameters
@@ -600,21 +600,12 @@ ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0
 ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 
-# Plot Freezing level line
-# ax_frlabel = ax_precip.twinx()
-# ax_frlabel.plot(time_nums_3h, freezing_3h, color='#0072B2', linestyle='-', linewidth=0.7)
-# ax_frlabel.set_yticks([])
-
-# Y-axis setup
+# Y-axis setup (fixed 0–17 mm, ticks at 5, 10, 15)
 ax_precip.set_ylabel('Precip.\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
-
-max_precip = max(np.max(rain_3h), np.max(showers_3h), np.max(snowfall_3h))
-y_step = 2 if max_precip <= 10 else 5 if max_precip <= 30 else 10
-y_max = y_step * np.ceil((max_precip + 2) / y_step)
-ax_precip.set_ylim(0, y_max)
-ax_precip.set_yticks(np.arange(y_step, y_max + y_step, y_step))
+ax_precip.set_ylim(0, 17)
+ax_precip.set_yticks([5, 10, 15])  # only 5, 10, 15, no 0
 
 # Right-side label for freezing level
 ax_frlabel = ax_precip.twinx()
@@ -628,13 +619,12 @@ ax_frlabel.tick_params(right=False, labelright=False)  # Hide right ticks and la
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2  # push first label inside
 for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
     val = freezing_3h_km[i]
-    if val <= 1.7: # Select minimum threshold to plot (km)
+    if val <= 1.7:  # Select minimum threshold to plot (km)
         x = time_nums_3h[i] + offset if i == 0 else time_nums_3h[i]
         ax_precip.text(
-            x, y_max - 0.5, f"{val:.1f}",
+            x, 16.5, f"{val:.1f}",
             ha='center', va='top',
             fontsize=9, color='blue',
-            #fontweight='bold',
             bbox=dict(facecolor='white', edgecolor='none', alpha=0.7, pad=1.5)
         )
 
@@ -1105,6 +1095,8 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
+
 
 
 
