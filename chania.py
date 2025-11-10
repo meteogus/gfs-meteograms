@@ -874,7 +874,7 @@ for x, bft_val in zip(times_num_sel, gusts_bft_sel):
 
 # Section 8: CAPE and Lifted Index
 ax_cape = axs[7]
-ax_cape.set_ylabel('CAPE\n(J/kg)', fontsize=9, color='#007F7F')
+ax_cape.set_ylabel('MUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
 ax_cape.tick_params(axis='y', labelcolor='#007F7F')
 
 # Filter negative Lifted Index values every 3 hours
@@ -906,7 +906,7 @@ ax_cape.patch.set_alpha(0)
 bars = ax_li.bar(neg_li_times, neg_li_values, color='#F08228', width=0.08, align='center', zorder=1)
 
 # Plot the red CAPE line with very high zorder on ax_cape (always on top)
-cape_line, = ax_cape.plot(times, cape, color='#007F7F', label='CAPE (J/kg)', zorder=10)
+cape_line, = ax_cape.plot(times, cape, color='#007F7F', label='MUCAPE (J/kg)', zorder=10)
 
 # Other elements (grid, zero line)
 ax_cape.grid(axis='both', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.7, zorder=0)
