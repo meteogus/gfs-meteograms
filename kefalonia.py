@@ -32,8 +32,9 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.17
-longitude = 20.49
+latitude = 38.00
+longitude = 23.75
+
 
 # API call parameters
 url = "https://api.open-meteo.com/v1/forecast"
@@ -272,9 +273,22 @@ print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
 
 # --- Plotting ---
 fig, axs = plt.subplots(
-    9, 1,
-    figsize=(1000 / 96, 870 / 96), 
-    gridspec_kw={'height_ratios': [1.2, 3.2, 0.7, 0.7, 1.5, 0.8, 1, 1, 1]},
+    10, 1,
+    figsize=(1000 / 96, 960 / 96), 
+    gridspec_kw={
+        'height_ratios': [
+            1.2,  # Section 1
+            3.2,  # Section 2
+            0.7,  # Section 3
+            0.7,  # Section 4
+            1.5,  # Section 5 (GFS precipitation)
+            1.5,  # Section 6 (ECMWF precipitation)
+            0.8,  # Section 7
+            1.0,  # Section 8
+            1.0,  # Section 9
+            1.0   # Section 10
+        ]
+    },
     sharex=True
 )
 
@@ -425,6 +439,7 @@ for i, dt in enumerate(times_3h):
 # --- Print freezing level at 3-hourly steps ---
 for dt, p in zip(times_3h, freezing_level_hpa_3h):
     print(f"{dt}: {p:.1f} hPa")
+
 
 
 
@@ -599,7 +614,7 @@ ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C'
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 
 # Y-axis setup (fixed 0–17 mm, ticks at 5, 10, 15)
-ax_precip.set_ylabel('Precip.\n(mm)', fontsize=9, color='black')
+ax_precip.set_ylabel('GFS\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
 ax_precip.set_ylim(0, 17)
@@ -648,8 +663,84 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-# --- Section 6: Pressure ---
-ax_pressure = axs[5]
+
+# SECTION 6: ECMWF PRECIPITATION
+try:
+    params_ecmwf = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "hourly": "precipitation",
+        "forecast_days": 6,
+        "timezone": "UTC",
+        "models": "ecmwf_ifs"
+    }
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            response_ecmwf = requests.get(url, params=params_ecmwf, timeout=timeout_per_request)
+            response_ecmwf.raise_for_status()
+            data_ecmwf = response_ecmwf.json()
+            break
+        except Exception as e:
+            print(f"ECMWF attempt {attempt} failed: {e}")
+            if attempt == max_retries:
+                raise
+            time.sleep(delay_seconds)
+
+    # Raw hourly ECMWF precip
+    ecmwf_precip_raw = np.array(data_ecmwf["hourly"]["precipitation"])
+    ecmwf_time_raw = pd.to_datetime(data_ecmwf["hourly"]["time"])
+    ecmwf_time_nums = mdates.date2num(ecmwf_time_raw)
+
+    # Convert to 3-hour totals
+    n = (len(ecmwf_precip_raw) // 3) * 3
+    ecmwf_precip_3h = ecmwf_precip_raw[:n].reshape(-1, 3).sum(axis=1)
+    ecmwf_time_nums_3h = ecmwf_time_nums[:n].reshape(-1, 3)[:, 0]
+
+    # NEW AXIS — next subplot after Section 5
+    ax_ecmwf = axs[5]
+
+    # Same width as GFS
+    bar_width_ecmwf = (ecmwf_time_nums[1] - ecmwf_time_nums[0]) * 1.8
+
+    ax_ecmwf.bar(
+        ecmwf_time_nums_3h,
+        ecmwf_precip_3h,
+        width=bar_width_ecmwf,
+        color='#2E86AB',
+        alpha=1.0
+    )
+
+    # Y-axis same as GFS
+    ax_ecmwf.set_ylim(0, 17)
+    ax_ecmwf.set_yticks([5, 10, 15])
+    ax_ecmwf.set_ylabel("ECMWF\n(mm)", fontsize=9)
+
+    ax_ecmwf.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+except Exception as e:
+    print(f"Error in ECMWF precipitation section: {e}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --- Section 7: Pressure ---
+ax_pressure = axs[6]
 
 # Plot sea level pressure (SLP)
 ax_pressure.plot(times, pressure_msl, color='#00A0FF', linewidth=1, label='SLP (hPa)')
@@ -696,8 +787,7 @@ ax_pressure.set_yticks(yticks)
 
 
 
-
-# --- Section 7: Wind Gusts and Beaufort Scale Visualization ---
+# --- Section 8: Wind Gusts and Beaufort Scale Visualization ---
 
 def compute_beaufort(knots):
     conditions = [
@@ -771,7 +861,7 @@ u_sel = u[:-1]
 v_sel = v[:-1]
 
 # Clear and setup wind gust subplot
-ax_windgust = axs[6]
+ax_windgust = axs[7]
 ax_windgust.clear()
 ax_windgust.set_ylim(0, 14)
 ax_windgust.set_yticks([])
@@ -856,25 +946,9 @@ for x, bft_val in zip(times_num_sel, gusts_bft_sel):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Section 8: CAPE and Lifted Index
-ax_cape = axs[7]
-ax_cape.set_ylabel('MUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
+# Section 9: CAPE and Lifted Index
+ax_cape = axs[8]
+ax_cape.set_ylabel('MUMUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
 ax_cape.tick_params(axis='y', labelcolor='#007F7F')
 
 # Filter negative Lifted Index values every 3 hours
@@ -906,7 +980,7 @@ ax_cape.patch.set_alpha(0)
 bars = ax_li.bar(neg_li_times, neg_li_values, color='#F08228', width=0.08, align='center', zorder=1)
 
 # Plot the red CAPE line with very high zorder on ax_cape (always on top)
-cape_line, = ax_cape.plot(times, cape, color='#007F7F', label='MUCAPE (J/kg)', zorder=10)
+cape_line, = ax_cape.plot(times, cape, color='#007F7F', label='MUMUCAPE (J/kg)', zorder=10)
 
 # Other elements (grid, zero line)
 ax_cape.grid(axis='both', color='#92A9B6', linestyle='dotted',dashes=(2, 5),alpha=0.7, zorder=0)
@@ -948,8 +1022,8 @@ ax_li.set_yticks(np.arange(-2, -8, -2))
 
 
 
-# Section 9: Z500_1000 (left y-axis) and Z850_1000 (right y-axis)
-ax_Z500_1000 = axs[8]  # Base axis for Z500_1000
+# Section 10: Z500_1000 (left y-axis) and Z850_1000 (right y-axis)
+ax_Z500_1000 = axs[9]  # Base axis for Z500_1000
 
 # Plot Z500_1000 on primary y-axis (left)
 ax_Z500_1000.plot(
@@ -1099,16 +1173,6 @@ for tick, day in zip(ticks_00z, day_labels):
         fontweight='bold',
         color='black'       # <-- added this line
     )
-
-
-
-
-
-
-
-
-
-
 
 
 
