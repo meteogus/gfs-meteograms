@@ -32,8 +32,8 @@ if now_utc.hour < gfs_run_hours[0]:
 print(f"Latest GFS run: {latest_run_time:%Y-%m-%d %HZ}")
 
 # Location
-latitude = 38.00
-longitude = 23.75
+latitude = 35.34
+longitude = 25.13
 
 
 # API call parameters
@@ -664,7 +664,7 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-# SECTION 6: ECMWF PRECIPITATION
+# Section 6: ECMWF PRECIPITATION
 try:
     params_ecmwf = {
         "latitude": latitude,
@@ -1182,6 +1182,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("heraklion.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
