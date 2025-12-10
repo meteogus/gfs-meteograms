@@ -663,7 +663,7 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-# SECTION 6: ECMWF PRECIPITATION
+# Section 6: ECMWF PRECIPITATION
 try:
     params_ecmwf = {
         "latitude": latitude,
@@ -1191,6 +1191,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("agrinio.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
