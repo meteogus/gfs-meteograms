@@ -948,7 +948,7 @@ for x, bft_val in zip(times_num_sel, gusts_bft_sel):
 
 # Section 9: CAPE and Lifted Index
 ax_cape = axs[8]
-ax_cape.set_ylabel('MUMUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
+ax_cape.set_ylabel('MUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
 ax_cape.tick_params(axis='y', labelcolor='#007F7F')
 
 # Filter negative Lifted Index values every 3 hours
@@ -1182,6 +1182,7 @@ for tick, day in zip(ticks_00z, day_labels):
 plt.subplots_adjust(hspace=0.05)
 plt.savefig("london.png", dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
