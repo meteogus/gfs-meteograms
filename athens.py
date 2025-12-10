@@ -664,7 +664,7 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h (2 x 3h)
 
 
 
-# SECTION 6: ECMWF PRECIPITATION
+# Section 6: ECMWF PRECIPITATION
 try:
     params_ecmwf = {
         "latitude": latitude,
@@ -1184,6 +1184,7 @@ filename = f"athens{run_hour}.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0)
 plt.close(fig)
+
 
 
 
