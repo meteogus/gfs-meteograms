@@ -577,29 +577,9 @@ ax_temp850.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5),
 
 # --- Section 5: Precipitation + Freezing Level + Hail Symbols (every 3h) ---
 
-
-# --- Hail CAPE threshold function (meters of freezing level) ---
-def cape_threshold(fl_m):
-    """
-    Return critical CAPE (J/kg) based on freezing level in meters.
-    Logic: lower freezing level -> lower CAPE needed for hail.
-    """
-    if fl_m < 1500:
-        return 125 * fl_m / 1500
-    elif fl_m < 2000:
-        return 125 + (fl_m - 1500) * (125 / 500)
-    elif fl_m < 2500:
-        return 250 + (fl_m - 2000) * (125 / 500)
-    elif fl_m < 3000:
-        return 375 + (fl_m - 2500) * (125 / 500)
-    else:
-        return 500
-
-
-
 ax_precip = axs[4]
 
-# Bar width setup
+# Bar width setup (unchanged)
 bar_width = (time_nums[1] - time_nums[0]) * 1.8
 bar_width_showers = (time_nums[1] - time_nums[0]) * 0.9
 
@@ -609,6 +589,7 @@ showers_arr = np.array(showers)         # showers (mm per hour)
 snowfall_arr = np.array(snowfall)       # snowfall (mm per hour)
 freezing_arr = np.array(freezing_level) # freezing level (m)
 cape_arr = np.array(cape)               # CAPE values
+t500_arr = np.array(temperature_500)    # T500 in °C
 time_arr = np.array(time_nums)
 
 # Reshape into 3h blocks
@@ -616,16 +597,17 @@ n = (len(rain) // 3) * 3
 rain_3h = rain[:n].reshape(-1, 3).sum(axis=1)
 showers_3h = showers_arr[:n].reshape(-1, 3).sum(axis=1)
 snowfall_3h = snowfall_arr[:n].reshape(-1, 3).sum(axis=1)
-freezing_3h_km = (freezing_arr[:n].reshape(-1, 3).mean(axis=1)) / 1000  # avg freezing level in km
-cape_3h = cape_arr[:n].reshape(-1, 3).max(axis=1)  # use max CAPE in 3h block
-time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]   # timestamp of first hour in block
+freezing_3h_km = (freezing_arr[:n].reshape(-1, 3).mean(axis=1)) / 1000  # avg freezing level km
+cape_3h = cape_arr[:n].reshape(-1, 3).max(axis=1)  # max CAPE 3h block
+t500_3h = t500_arr[:n].reshape(-1, 3).mean(axis=1) # avg T500 3h block
+time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]   # timestamp of first hour
 
-# Plot precipitation bars
+# --- Plot precipitation bars (unchanged) ---
 ax_precip.bar(time_nums_3h, rain_3h, width=bar_width, color='#20D020', alpha=1.0, label='Rain')
 ax_precip.bar(time_nums_3h, showers_3h, width=bar_width_showers, color='#FA3C3C', alpha=1.0, label='Showers')
 ax_precip.bar(time_nums_3h, snowfall_3h, width=bar_width, color='#4040FF', alpha=1.0, label='Snowfall')
 
-# Y-axis setup (fixed 0–17 mm, ticks at 5, 10, 15)
+# Y-axis setup
 ax_precip.set_ylabel('Precip.\n(mm)', fontsize=9, color='black')
 ax_precip.tick_params(axis='y', labelcolor='black')
 ax_precip.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
@@ -638,7 +620,7 @@ ax_frlabel.set_ylim(ax_precip.get_ylim())
 ax_frlabel.set_ylabel("Fr.Level\n(km)", fontsize=9, color='blue', rotation=90)
 ax_frlabel.yaxis.set_label_position("right")
 ax_frlabel.yaxis.tick_right()
-ax_frlabel.tick_params(right=False, labelright=False)  # hide ticks/labels
+ax_frlabel.tick_params(right=False, labelright=False)
 
 # Annotate freezing level every 6h if below 2 km
 offset = (time_nums_3h[1] - time_nums_3h[0]) / 2
@@ -654,30 +636,32 @@ for i in range(0, len(time_nums_3h), 2):  # every 6h
         )
 
 # --- Hail symbol logic ---
-hail_symbol = "*"  # simple ASCII symbol
-def cape_threshold(fl_m):
-    if fl_m < 1500:
-        return 125 * fl_m / 1500
-    elif fl_m < 2000:
-        return 125 + (fl_m - 1500) * (125 / 500)
-    elif fl_m < 2500:
-        return 250 + (fl_m - 2000) * (125 / 500)
-    elif fl_m < 3000:
-        return 375 + (fl_m - 2500) * (125 / 500)
-    else:
-        return 500
+hail_symbol = "*"  # black asterisk
 
-# Plot hail symbols every 3h if CAPE exceeds threshold
-for t, r, fl_km, cape_val in zip(time_nums_3h, rain_3h, freezing_3h_km, cape_3h):
-    crit_cape = cape_threshold(fl_km * 1000)  # convert km to m
-    if cape_val >= crit_cape:
+def cape_threshold(fl_m):
+    """Critical CAPE (J/kg) based on freezing level (m)"""
+    if fl_m < 1500:
+        return 250
+    elif fl_m < 2000:
+        return 250 + (fl_m - 1500) * (50 / 500)
+    elif fl_m < 2500:
+        return 300 + (fl_m - 2000) * (50 / 500)
+    elif fl_m < 3000:
+        return 350 + (fl_m - 2500) * (50 / 500)
+    else:
+        return 400
+
+# Plot hail symbols every 3h if conditions are met (CAPE + FL + T500)
+for t, r, fl_km, cape_val, t500 in zip(time_nums_3h, rain_3h, freezing_3h_km, cape_3h, t500_3h):
+    crit_cape = cape_threshold(fl_km * 1000)
+    if (cape_val >= crit_cape) and (fl_km <= 4.0) and (t500 <= -20.0):
         ax_precip.text(
             t,
-            r + 1.5,      # position above precipitation bar
+            r + 1.5,
             hail_symbol,
             fontsize=12,
             ha='center', va='bottom',
-            color='blue',  # <-- blue color
+            color='black',
             bbox=dict(facecolor='white', edgecolor='none', alpha=0.7),
             zorder=20
         )
