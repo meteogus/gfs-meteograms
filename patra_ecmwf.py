@@ -50,7 +50,7 @@ params = {
         "snowfall",
         "temperature_2m",
     ]),
-    "forecast_days": 11,
+    "forecast_days": 6,
     "timezone": "UTC",
     "models": "ecmwf_ifs"
 }
