@@ -416,7 +416,7 @@ for tick, label in zip(ticks_00z, labels_00z):
 
 # PLOT IMAGE
 run_hour = latest_run_time.strftime("%H")
-filename = f"KIATO10d_{run_hour}.png"
+filename = f"kiato_ecmwf.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0.05)
 plt.close(fig)
