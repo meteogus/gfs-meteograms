@@ -92,11 +92,6 @@ jobs:
               f"lamia{run_hour}.png",
               f"patra{run_hour}.png",
               f"salonica{run_hour}.png",
-              f"athens10d_{run_hour}.png",
-              f"kiato10d_{run_hour}.png",
-              f"lamia10d_{run_hour}.png",
-              f"patra10d_{run_hour}.png",
-              f"salonica10d_{run_hour}.png",
               "agrinio.png",
               "chania.png",
               "florina.png",
@@ -106,8 +101,13 @@ jobs:
               "kefalonia.png",
               "larisa.png",
               "trikala.png",
-              "ikaria10d.png",
-              "london.png"
+              "london.png",
+              f"athens_ecmwf.png",
+              f"kiato_ecmwf.png",
+              f"lamia_ecmwf.png",
+              f"patra_ecmwf.png",
+              f"salonica_ecmwf.png",
+              f"ikaria_ecmwf.png",
           ]
 
           host = os.getenv('SFTP_HOST')
