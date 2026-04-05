@@ -23,44 +23,15 @@ jobs:
           pip install -r requirements.txt
           pip install paramiko
 
-      # ✅ Determine latest GFS run hour
-      - name: Determine GFS run hour
-        id: gfs_run
-        run: |
-          hour=$(date -u +"%H")
-          if ((hour >= 0 && hour < 6)); then
-              run_hour="00"
-          elif ((hour >= 6 && hour < 12)); then
-              run_hour="06"
-          elif ((hour >= 12 && hour < 18)); then
-              run_hour="12"
-          else
-              run_hour="18"
-          fi
-          echo "🕒 Current UTC hour: $hour"
-          echo "📦 Using GFS run hour: $run_hour"
-          echo "run_hour=$run_hour" >> $GITHUB_ENV
-
       # ✅ Run meteogram scripts
       - name: Run meteogram scripts
         run: |
-          python athens.py
-          python kiato.py
-          python lamia.py
-          python patra.py
-          python salonica.py
-          python agrinio.py
-          python chania.py
-          python florina.py
-          python heraklion.py
-          python ikaria.py
-          python ioannina.py
-          python kefalonia.py
-          python larisa.py
-          python trikala.py
-          python london.py
-        env:
-          RUN_HOUR: ${{ env.run_hour }}
+          python athens_ecmwf.py
+          python kiato_ecmwf.py
+          python lamia_ecmwf.py
+          python patra_ecmwf.py
+          python salonica_ecmwf.py
+          python ikaria_ecmwf.py
 
       # ✅ Upload dynamically named files + static (london.png)
       - name: Upload images via SFTP with paramiko
@@ -70,32 +41,20 @@ jobs:
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
-          RUN_HOUR: ${{ env.run_hour }}
+
         run: |
           python - <<EOF
           import paramiko
           import os
           import sys
 
-          run_hour = os.getenv('RUN_HOUR', '00')
-          print(f"🕒 Using run_hour: {run_hour}")
-
           files = [
-              f"athens{run_hour}.png",
-              f"kiato{run_hour}.png",
-              f"lamia{run_hour}.png",
-              f"patra{run_hour}.png",
-              f"salonica{run_hour}.png",
-              "agrinio.png",
-              "chania.png",
-              "florina.png",
-              "heraklion.png",
-              "ikaria.png",
-              "ioannina.png",
-              "kefalonia.png",
-              "larisa.png",
-              "trikala.png",
-              "london.png",
+              f"athens_ecmwf.png",
+              f"kiato_ecmwf.png",
+              f"lamia_ecmwf.png",
+              f"patra_ecmwf.png",
+              f"salonica_ecmwf.png",
+              f"ikaria_ecmwf.png",
           ]
 
           host = os.getenv('SFTP_HOST')
