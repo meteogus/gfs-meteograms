@@ -187,8 +187,14 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
                 alpha=1.0
             )
 
+# Decide run label based on UTC time
+if now_utc.hour < 12:
+    run_label = "00Z"
+else:
+    run_label = "12Z"
+
 ax_cloud.set_title(
-    f"SALONICA ECMWF",
+    f"SALONICA ECMWF ({run_label})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
