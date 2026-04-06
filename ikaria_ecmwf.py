@@ -53,7 +53,8 @@ params = {
         "precipitation",            
         "showers",         
         "snowfall",
-        "temperature_2m"
+        "temperature_2m",
+        "precipitation_probability"
     ]),
     "forecast_days": 6,
     "timezone": "UTC",
@@ -99,6 +100,7 @@ showers = get_data('showers')
 snowfall = get_data('snowfall')
 wind_gusts_10m = get_data("wind_gusts_10m")
 temperature_2m = get_data('temperature_2m')
+precipitation_probability = get_data('precipitation_probability')
 
 
 
@@ -135,6 +137,7 @@ showers = showers[start_index:end_index + 1]
 snowfall = snowfall[start_index:end_index + 1]
 wind_gusts_10m = wind_gusts_10m[start_index:end_index + 1]
 temperature_2m = temperature_2m[start_index:end_index + 1]
+precipitation_probability = precipitation_probability[start_index:end_index + 1]
 
 print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
 
@@ -147,13 +150,11 @@ print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
 
 
 fig, axs = plt.subplots(
-    6, 1,
-    figsize=(1000 / 96, 650 / 96),
-    gridspec_kw={'height_ratios': [0.2, 0.23, 0.2, 0.25, 0.2, 0.2]},
+    7, 1,
+    figsize=(1000 / 96, 857 / 96),
+    gridspec_kw={'height_ratios': [0.15, 0.23, 0.2, 0.2, 0.2, 0.2, 0.2]},
     sharex=True
 )
-
-
 
 
 
@@ -195,7 +196,7 @@ else:
 
 ax_cloud.set_title(
     f"IKARIA ECMWF ({run_label})",
-    loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
+    loc="center", fontsize=14, fontweight='bold', color='black', y=1.8
 )
 
 ax_cloud.tick_params(axis='y', colors='black')
@@ -263,6 +264,32 @@ ax_precip.set_yticks([5, 10, 15])
 
 
 
+# --- Section 3: Precipitation Probability ---
+ax_pop = axs[2]
+
+# 3-hour aggregation (max makes more sense εδώ)
+precip_prob_arr = np.array(precipitation_probability)
+n = (len(precip_prob_arr) // 3) * 3
+
+pop_3h = precip_prob_arr[:n].reshape(-1, 3).max(axis=1)
+time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]
+
+# Plot
+ax_pop.plot(time_nums_3h, pop_3h, color='#8000FF', linewidth=1.5)
+
+# Optional fill για πιο "weather-style"
+ax_pop.fill_between(time_nums_3h, 0, pop_3h, color='#D8B3FF', alpha=0.5)
+
+# Axis
+ax_pop.set_ylabel('PoP\n(%)', fontsize=9, color='black')
+ax_pop.set_ylim(0, 100)
+ax_pop.set_yticks([20, 40, 60, 80, 100])
+
+ax_pop.tick_params(axis='y', labelcolor='black')
+ax_pop.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+
+# --- Threshold line ---
+ax_pop.axhline(30, color='gray', linestyle='--', linewidth=1.2)
 
 
 
@@ -279,10 +306,8 @@ ax_precip.set_yticks([5, 10, 15])
 
 
 
-
-
-# --- Section 3: Pressure ---
-ax_pressure = axs[2]
+# --- Section 4: Pressure ---
+ax_pressure = axs[3]
 
 # Plot sea level pressure (SLP)
 ax_pressure.plot(times, pressure_msl, color='#00A0FF', linewidth=1, label='SLP (hPa)')
@@ -315,8 +340,8 @@ ax_pressure.set_yticks(yticks)
 
 
 
-# --- Section 4: Temperature 2m ---
-ax_temp = axs[3]  
+# --- Section 5: Temperature 2m ---
+ax_temp = axs[4]  
 ax_temp.plot(times, temperature_2m, color='#FF8000', linewidth=1.5)
 ax_temp.set_ylabel('T2m\n(°C)', fontsize=10, color='black')
 ax_temp.tick_params(axis='y', labelcolor='black')
@@ -375,8 +400,8 @@ ax_temp.set_yticklabels([str(int(v)) if i != len(yt)-1 else '' for i, v in enume
 
 
 
-# --- Section 5: Wind Gusts and Beaufort Scale Visualization ---
-ax_windgust = axs[4]
+# --- Section 6: Wind Gusts and Beaufort Scale Visualization ---
+ax_windgust = axs[5]
 
 def compute_beaufort(knots):
     conditions = [
@@ -506,8 +531,8 @@ for x, bft_val in zip(times_num_sel, gusts_bft_sel):
 
 
 
-# Section 6: CAPE
-ax_cape = axs[5]
+# Section 7: CAPE
+ax_cape = axs[6]
 
 ax_cape.set_ylabel('MUCAPE\n(J/kg)', fontsize=9, color='#007F7F')
 ax_cape.tick_params(axis='y', labelcolor='#007F7F')
@@ -555,7 +580,7 @@ labels_00z = [f"{mdates.num2date(t).day}{mdates.num2date(t).strftime('%b').upper
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
-        tick, -0.35,
+        tick, -0.25,
         label,
         ha='center',
         va='top',
@@ -590,7 +615,7 @@ day_labels = [mdates.num2date(t).strftime('%a').upper() for t in ticks_00z]
 
 for tick, day in zip(ticks_00z, day_labels):
     axs[0].text(
-        tick, 1.50,   
+        tick, 1.47,   
         day,
         ha='center',
         va='bottom',
@@ -600,10 +625,12 @@ for tick, day in zip(ticks_00z, day_labels):
         color='black'
     )
 
+
 filename = f"ikaria_ecmwf.png"
 plt.subplots_adjust(hspace=0.05)
 plt.savefig(filename, dpi=96, bbox_inches='tight', pad_inches=0.1)
 plt.close(fig)
+
 
 
 
