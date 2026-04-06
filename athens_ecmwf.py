@@ -151,12 +151,10 @@ print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
 
 fig, axs = plt.subplots(
     7, 1,
-    figsize=(1000 / 96, 650 / 96),
-    gridspec_kw={'height_ratios': [0.2, 0.23, 0.2, 0.25, 0.2, 0.2, 0.2]},
+    figsize=(1000 / 96, 857 / 96),
+    gridspec_kw={'height_ratios': [0.15, 0.23, 0.2, 0.2, 0.2, 0.2, 0.2]},
     sharex=True
 )
-
-
 
 
 
@@ -198,7 +196,7 @@ else:
 
 ax_cloud.set_title(
     f"ATHENS ECMWF ({run_label})",
-    loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
+    loc="center", fontsize=14, fontweight='bold', color='black', y=1.8
 )
 
 ax_cloud.tick_params(axis='y', colors='black')
@@ -582,7 +580,7 @@ labels_00z = [f"{mdates.num2date(t).day}{mdates.num2date(t).strftime('%b').upper
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[-1].text(
-        tick, -0.35,
+        tick, -0.25,
         label,
         ha='center',
         va='top',
@@ -617,7 +615,7 @@ day_labels = [mdates.num2date(t).strftime('%a').upper() for t in ticks_00z]
 
 for tick, day in zip(ticks_00z, day_labels):
     axs[0].text(
-        tick, 1.50,   
+        tick, 1.47,   
         day,
         ha='center',
         va='bottom',
