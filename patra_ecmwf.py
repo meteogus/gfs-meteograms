@@ -54,7 +54,7 @@ params = {
         "showers",         
         "snowfall",
         "temperature_2m",
-        "precipitation_probability"
+        "relative_humidity_2m"
     ]),
     "forecast_days": 6,
     "timezone": "UTC",
@@ -100,7 +100,7 @@ showers = get_data('showers')
 snowfall = get_data('snowfall')
 wind_gusts_10m = get_data("wind_gusts_10m")
 temperature_2m = get_data('temperature_2m')
-precipitation_probability = get_data('precipitation_probability')
+relative_humidity_2m = get_data('relative_humidity_2m')
 
 
 
@@ -137,7 +137,7 @@ showers = showers[start_index:end_index + 1]
 snowfall = snowfall[start_index:end_index + 1]
 wind_gusts_10m = wind_gusts_10m[start_index:end_index + 1]
 temperature_2m = temperature_2m[start_index:end_index + 1]
-precipitation_probability = precipitation_probability[start_index:end_index + 1]
+relative_humidity_2m = relative_humidity_2m[start_index:end_index + 1]
 
 print(f"Data filtered from {times[0]:%Y-%m-%d %HZ} to {times[-1]:%Y-%m-%d %HZ}")
 
@@ -264,32 +264,95 @@ ax_precip.set_yticks([5, 10, 15])
 
 
 
-# --- Section 3: Precipitation Probability ---
-ax_pop = axs[2]
+# --- Section 3: Relative Humidity 2m (Wetterzentrale-style polished split) ---
+ax_rh = axs[2]
 
-# 3-hour aggregation (max makes more sense εδώ)
-precip_prob_arr = np.array(precipitation_probability)
-n = (len(precip_prob_arr) // 3) * 3
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
-pop_3h = precip_prob_arr[:n].reshape(-1, 3).max(axis=1)
-time_nums_3h = time_arr[:n].reshape(-1, 3)[:, 0]
+rh = np.array(relative_humidity_2m, dtype=float)
 
-# Plot
-ax_pop.plot(time_nums_3h, pop_3h, color='#8000FF', linewidth=1.5)
+n = (len(rh) // 3) * 3
+rh_3h = rh[:n].reshape(-1, 3).mean(axis=1)
+time_3h = time_arr[:n].reshape(-1, 3)[:, 0]
 
-# Optional fill για πιο "weather-style"
-ax_pop.fill_between(time_nums_3h, 0, pop_3h, color='#D8B3FF', alpha=0.5)
+x = np.array(time_3h)
+y = np.array(rh_3h)
 
-# Axis
-ax_pop.set_ylabel('PoP\n(%)', fontsize=9, color='black')
-ax_pop.set_ylim(0, 100)
-ax_pop.set_yticks([20, 40, 60, 80, 100])
+ax_rh.set_ylim(0, 100)
 
-ax_pop.tick_params(axis='y', labelcolor='black')
-ax_pop.grid(axis='both', color='#92A9B6', linestyle='dotted', dashes=(2, 5), alpha=0.8)
+# --- smooth interpolation ---
+x_dense = np.linspace(x.min(), x.max(), 350)
+y_dense = np.interp(x_dense, x, y)
 
-# --- Threshold line ---
-ax_pop.axhline(30, color='gray', linestyle='--', linewidth=1.2)
+Z = np.tile(np.linspace(0, 100, 220)[:, None], (1, len(x_dense)))
+Y_curve = np.tile(y_dense, (220, 1))
+
+# =========================
+# NICE GREY (0–60%)
+# =========================
+grey_cmap = LinearSegmentedColormap.from_list(
+    "grey_soft",
+    [
+        "#f5f5f5",
+        "#e0e0e0",
+        "#cfcfcf",
+        "#b8b8b8",
+        "#9e9e9e"
+    ]
+)
+
+mask_grey = (Z <= Y_curve) & (Z <= 60)
+Z_grey = np.ma.masked_where(~mask_grey, Z)
+
+ax_rh.imshow(
+    Z_grey,
+    extent=[x.min(), x.max(), 0, 100],
+    origin='lower',
+    aspect='auto',
+    cmap=grey_cmap,
+    alpha=0.55,
+    zorder=1
+)
+
+# =========================
+# NICE GREEN (>60%)
+# =========================
+green_cmap = LinearSegmentedColormap.from_list(
+    "green_soft",
+    [
+        "#e8f5e9",
+        "#c8e6c9",
+        "#a5d6a7",
+        "#66bb6a",
+        "#2e7d32"
+    ]
+)
+
+mask_green = (Z <= Y_curve) & (Z > 60)
+Z_green = np.ma.masked_where(~mask_green, Z)
+
+ax_rh.imshow(
+    Z_green,
+    extent=[x.min(), x.max(), 0, 100],
+    origin='lower',
+    aspect='auto',
+    cmap=green_cmap,
+    alpha=0.65,
+    zorder=2
+)
+
+# --- outline curve ---
+ax_rh.plot(x, y, color='black', linewidth=0.8, zorder=3)
+
+# --- styling ---
+ax_rh.set_ylabel('RH\n(%)', fontsize=9)
+ax_rh.set_yticks([20, 40, 60, 80, 100])
+
+ax_rh.grid(axis='y', linestyle='dotted', alpha=0.5)
+
+ax_rh.axhline(60, color='gray', linestyle='--', linewidth=1.2, alpha=0.9)
+
 
 
 
@@ -603,7 +666,7 @@ ax_cloud_secondary_x.tick_params(axis='x', which='major', pad=5)
 
 for tick, label in zip(ticks_00z, labels_00z):
     axs[0].text(
-        tick, 1.30,   
+        tick, 1.35,   
         label,
         ha='center',
         va='bottom',
@@ -615,7 +678,7 @@ day_labels = [mdates.num2date(t).strftime('%a').upper() for t in ticks_00z]
 
 for tick, day in zip(ticks_00z, day_labels):
     axs[0].text(
-        tick, 1.47,   
+        tick, 1.53,   
         day,
         ha='center',
         va='bottom',
