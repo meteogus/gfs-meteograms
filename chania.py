@@ -315,7 +315,7 @@ for cloud_cover, band_center in zip([cloud_low, cloud_mid, cloud_high], [0.5, 1.
             )
 
 ax_cloud.set_title(
-    f"CHANIA Init: {latest_run_time:%Y-%m-%d} ({latest_run_time:%HZ})",
+    f"Chania GFS: {latest_run_time:%d-%m-%Y} ({latest_run_time:%HZ})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.9
 )
 
