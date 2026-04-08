@@ -194,8 +194,11 @@ if now_utc.hour < 12:
 else:
     run_label = "12Z"
 
+# Format current date
+current_date_str = now_utc.strftime("%d-%m-%Y")
+
 ax_cloud.set_title(
-    f"ATHENS ECMWF ({run_label})",
+    f"Athens ECMWF: {current_date_str} ({run_label})",
     loc="center", fontsize=14, fontweight='bold', color='black', y=1.8
 )
 
