@@ -122,6 +122,7 @@ jobs:
                   local_path = f
                   remote_path = f"{folder}/{f}"
                   print(f"⬆️ Uploading {local_path} to {remote_path} ...")
+                  time.sleep(1)
                   sftp.put(local_path, remote_path)
               except Exception as e:
                   print(f"❌ Failed to upload {f}: {e}")
