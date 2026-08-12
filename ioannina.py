@@ -422,9 +422,7 @@ for i, dt in enumerate(times_3h):
 
 
 
-# --- Print freezing level at 3-hourly steps ---
-for dt, p in zip(times_3h, freezing_level_hpa_3h):
-    print(f"{dt}: {p:.1f} hPa")
+
 
 
 
