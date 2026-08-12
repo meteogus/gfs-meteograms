@@ -3,9 +3,6 @@ import pandas as pd
 import requests
 import time
 
-import matplotlib
-matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
@@ -426,9 +423,7 @@ for i, dt in enumerate(times_3h):
 
 
 
-# --- Print freezing level at 3-hourly steps ---
-for dt, p in zip(times_3h, freezing_level_hpa_3h):
-    print(f"{dt}: {p:.1f} hPa")
+
 
 
 
