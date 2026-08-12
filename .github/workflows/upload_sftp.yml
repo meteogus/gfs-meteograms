@@ -62,207 +62,71 @@ jobs:
         env:
           RUN_HOUR: ${{ env.run_hour }}
 
-        # Upload images via SFTP with paramiko
-  - name: Upload images via SFTP with paramiko
-    env:
-      SFTP_HOST: ${{ secrets.SFTP_HOST }}
-      SFTP_PORT: ${{ secrets.SFTP_PORT }}
-      SFTP_USER: ${{ secrets.SFTP_USER }}
-      SFTP_PASS: ${{ secrets.SFTP_PASS }}
-      SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
-      RUN_HOUR: ${{ env.run_hour }}
-    run: |
-      python - <<'EOF'
-      import paramiko
-      import os
-      import sys
-      import posixpath
+      # ✅ Upload dynamically named files + static (london.png)
+      - name: Upload images via SFTP with paramiko
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASS: ${{ secrets.SFTP_PASS }}
+          SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
+          RUN_HOUR: ${{ env.run_hour }}
+        run: |
+          python - <<EOF
+          import paramiko
+          import os
+          import sys
+          
+          run_hour = os.getenv('RUN_HOUR', '00')
+          print(f"🕒 Using run_hour: {run_hour}")
 
-      run_hour = os.getenv('RUN_HOUR', '00')
-      print(f"🕒 Using run_hour: {run_hour}")
+          files = [
+              f"athens{run_hour}.png",
+              f"kiato{run_hour}.png",
+              f"lamia{run_hour}.png",
+              f"patra{run_hour}.png",
+              f"salonica{run_hour}.png",
+              "agrinio.png",
+              "chania.png",
+              "florina.png",
+              "heraklion.png",
+              "ikaria.png",
+              "ioannina.png",
+              "kefalonia.png",
+              "larisa.png",
+              "trikala.png",
+              "london.png",
+          ]
 
-      files = [
-          f"athens{run_hour}.png",
-          f"kiato{run_hour}.png",
-          f"lamia{run_hour}.png",
-          f"patra{run_hour}.png",
-          f"salonica{run_hour}.png",
-          "agrinio.png",
-          "chania.png",
-          "florina.png",
-          "heraklion.png",
-          "ikaria.png",
-          "ioannina.png",
-          "kefalonia.png",
-          "larisa.png",
-          "trikala.png",
-          "london.png",
-      ]
+          host = os.getenv('SFTP_HOST')
+          port = int(os.getenv('SFTP_PORT', '22'))
+          user = os.getenv('SFTP_USER')
+          password = os.getenv('SFTP_PASS')
+          folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
 
-      host = os.getenv('SFTP_HOST')
-      port = int(os.getenv('SFTP_PORT', '22'))
-      user = os.getenv('SFTP_USER')
-      password = os.getenv('SFTP_PASS')
-      folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
+          if not all([host, user, password]):
+              print("❌ Missing SFTP credentials")
+              sys.exit(1)
 
-      if not all([host, user, password]):
-          print("❌ Missing SFTP credentials")
-          sys.exit(1)
-
-      print(f"📡 Connecting to {host}:{port} as {user} ...")
-
-      try:
-          transport = paramiko.Transport((host, port))
-          transport.connect(username=user, password=password)
-          sftp = paramiko.SFTPClient.from_transport(transport)
-          print("✅ SFTP connection established")
-
-      except Exception as e:
-          print(f"❌ Failed to connect or authenticate: {e}")
-          sys.exit(1)
-
-      failed = []
-
-      for filename in files:
-
-          local_path = filename
-          remote_path = posixpath.join(folder, filename)
-          temp_remote_path = remote_path + ".tmp"
-
+          print(f"📡 Connecting to {host}:{port} as {user} ...")
           try:
-
-              # -----------------------------------------
-              # Check local file
-              # -----------------------------------------
-
-              if not os.path.isfile(local_path):
-                  print(f"❌ Local file not found: {local_path}")
-                  failed.append(filename)
-                  continue
-
-              local_size = os.path.getsize(local_path)
-
-              if local_size == 0:
-                  print(f"❌ Local file is empty: {local_path}")
-                  failed.append(filename)
-                  continue
-
-              print(
-                  f"⬆️ Uploading {local_path} "
-                  f"({local_size:,} bytes) "
-                  f"to {remote_path} ..."
-              )
-
-              # -----------------------------------------
-              # Remove previous temporary file if exists
-              # -----------------------------------------
-
-              try:
-                  sftp.remove(temp_remote_path)
-              except IOError:
-                  pass
-
-              # -----------------------------------------
-              # Open remote temporary file
-              # -----------------------------------------
-
-              with open(local_path, "rb") as local_file:
-
-                  with sftp.open(temp_remote_path, "wb") as remote_file:
-
-                      transferred = 0
-
-                      while True:
-
-                          chunk = local_file.read(1024 * 1024)
-
-                          if not chunk:
-                              break
-
-                          remote_file.write(chunk)
-                          transferred += len(chunk)
-
-              # -----------------------------------------
-              # Verify remote temporary file size
-              # -----------------------------------------
-
-              remote_attr = sftp.stat(temp_remote_path)
-              remote_size = remote_attr.st_size
-
-              print(
-                  f"📦 Uploaded {filename}: "
-                  f"{remote_size:,} bytes"
-              )
-
-              if remote_size != local_size:
-
-                  print(
-                      f"❌ Size mismatch for {filename}: "
-                      f"local={local_size:,}, "
-                      f"remote={remote_size:,}"
-                  )
-
-                  try:
-                      sftp.remove(temp_remote_path)
-                  except IOError:
-                      pass
-
-                  failed.append(filename)
-                  continue
-
-              # -----------------------------------------
-              # Remove old final file
-              # -----------------------------------------
-
-              try:
-                  sftp.remove(remote_path)
-              except IOError:
-                  pass
-
-              # -----------------------------------------
-              # Rename temporary file to final filename
-              # -----------------------------------------
-
-              sftp.rename(temp_remote_path, remote_path)
-
-              print(
-                  f"✅ Uploaded successfully: "
-                  f"{filename} ({remote_size:,} bytes)"
-              )
-
+              transport = paramiko.Transport((host, port))
+              transport.connect(username=user, password=password)
+              sftp = paramiko.SFTPClient.from_transport(transport)
           except Exception as e:
+              print(f"❌ Failed to connect or authenticate: {e}")
+              sys.exit(1)
 
-              print(
-                  f"❌ Failed to upload {filename}: {e}"
-              )
-
-              failed.append(filename)
-
+          for f in files:
               try:
-                  sftp.remove(temp_remote_path)
-              except Exception:
-                  pass
+                  local_path = f
+                  remote_path = f"{folder}/{f}"
+                  print(f"⬆️ Uploading {local_path} to {remote_path} ...")
+                  sftp.put(local_path, remote_path)
+              except Exception as e:
+                  print(f"❌ Failed to upload {f}: {e}")
 
-      # -----------------------------------------
-      # Close connection
-      # -----------------------------------------
-
-      sftp.close()
-      transport.close()
-
-      # -----------------------------------------
-      # Final result
-      # -----------------------------------------
-
-      if failed:
-
-          print("\n❌ Upload completed with errors:")
-          for filename in failed:
-              print(f"   - {filename}")
-
-          sys.exit(1)
-
-      else:
-
-          print("\n✅ All files uploaded successfully.")
-      EOF
+          sftp.close()
+          transport.close()
+          print("✅ All files uploaded successfully.")
+          EOF
