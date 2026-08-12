@@ -61,7 +61,7 @@ jobs:
           python trikala.py
           python london.py
 
-           - name: Test SFTP write access
+      - name: Test SFTP write access
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -92,7 +92,6 @@ jobs:
           print(f"Folder: {folder}")
 
           try:
-
               transport = paramiko.Transport((host, port))
 
               transport.connect(
@@ -107,68 +106,35 @@ jobs:
               print("✅ SFTP connection established")
 
           except Exception as e:
-
               print(f"❌ Connection failed: {repr(e)}")
               sys.exit(1)
-
-          # --------------------------------------------
-          # TEST 1: stat folder
-          # --------------------------------------------
 
           print("")
           print("TEST 1: Checking remote folder")
 
           try:
-
               attr = sftp.stat(folder)
 
-              print(
-                  f"✅ Folder exists: {folder}"
-              )
-
-              print(
-                  f"   Mode: {oct(attr.st_mode)}"
-              )
+              print(f"✅ Folder exists: {folder}")
+              print(f"   Mode: {oct(attr.st_mode)}")
 
           except Exception as e:
-
-              print(
-                  f"❌ Cannot stat folder: "
-                  f"{repr(e)}"
-              )
-
-          # --------------------------------------------
-          # TEST 2: list folder
-          # --------------------------------------------
+              print(f"❌ Cannot stat folder: {repr(e)}")
 
           print("")
           print("TEST 2: Listing remote folder")
 
           try:
-
               files = sftp.listdir(folder)
 
-              print(
-                  f"✅ Folder readable"
-              )
-
-              print(
-                  f"   Files found: {len(files)}"
-              )
+              print("✅ Folder readable")
+              print(f"   Files found: {len(files)}")
 
               for f in files[:10]:
                   print(f"   - {f}")
 
           except Exception as e:
-
-              print(
-                  f"❌ Cannot list folder: "
-                  f"{repr(e)}"
-              )
-
-          # --------------------------------------------
-          # TEST 3: create tiny file
-          # --------------------------------------------
+              print(f"❌ Cannot list folder: {repr(e)}")
 
           test_name = ".sftp_test.txt"
 
@@ -179,62 +145,34 @@ jobs:
 
           print("")
           print("TEST 3: Creating test file")
-
-          print(
-              f"Remote path: {test_path}"
-          )
+          print(f"Remote path: {test_path}")
 
           try:
+              with sftp.open(test_path, "wb") as f:
+                  f.write(b"SFTP WRITE TEST")
 
-              with sftp.open(
-                  test_path,
-                  "wb"
-              ) as f:
-
-                  f.write(
-                      b"SFTP WRITE TEST"
-                  )
-
-              print(
-                  "✅ Test file created"
-              )
+              print("✅ Test file created")
 
           except Exception as e:
-
               print(
                   f"❌ Cannot create test file: "
                   f"{repr(e)}"
               )
 
-          # --------------------------------------------
-          # TEST 4: stat test file
-          # --------------------------------------------
-
           print("")
           print("TEST 4: Checking test file")
 
           try:
-
               attr = sftp.stat(test_path)
 
-              print(
-                  f"✅ Test file exists"
-              )
-
-              print(
-                  f"   Size: {attr.st_size} bytes"
-              )
+              print("✅ Test file exists")
+              print(f"   Size: {attr.st_size} bytes")
 
           except Exception as e:
-
               print(
                   f"❌ Cannot stat test file: "
                   f"{repr(e)}"
               )
-
-          # --------------------------------------------
-          # TEST 5: rename
-          # --------------------------------------------
 
           renamed_path = posixpath.join(
               folder,
@@ -245,50 +183,34 @@ jobs:
           print("TEST 5: Rename test")
 
           try:
-
               sftp.rename(
                   test_path,
                   renamed_path
               )
 
-              print(
-                  "✅ Rename successful"
-              )
+              print("✅ Rename successful")
 
           except Exception as e:
-
               print(
                   f"❌ Rename failed: "
                   f"{repr(e)}"
               )
 
-          # --------------------------------------------
-          # TEST 6: delete
-          # --------------------------------------------
-
           print("")
           print("TEST 6: Delete test")
 
           try:
-
               sftp.remove(
                   renamed_path
               )
 
-              print(
-                  "✅ Delete successful"
-              )
+              print("✅ Delete successful")
 
           except Exception as e:
-
               print(
                   f"❌ Delete failed: "
                   f"{repr(e)}"
               )
-
-          # --------------------------------------------
-          # CLOSE
-          # --------------------------------------------
 
           sftp.close()
           transport.close()
