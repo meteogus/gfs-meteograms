@@ -3,6 +3,9 @@ import pandas as pd
 import requests
 import time
 
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
