@@ -6,8 +6,11 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
+
   build-and-publish:
     runs-on: ubuntu-latest
 
@@ -46,7 +49,6 @@ jobs:
       # ============================================
 
       - name: Determine GFS run hour
-        id: gfs_run
         run: |
 
           hour=$(date -u +"%H")
@@ -116,58 +118,231 @@ jobs:
 
 
       # ============================================
-      # 7. CONFIGURE GIT
+      # 7. PREPARE GITHUB PAGES
       # ============================================
 
-      - name: Configure Git
+      - name: Prepare Pages directory
         run: |
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p public
+
+          cp *.png public/
 
 
       # ============================================
-      # 8. ADD PNG FILES
+      # 8. CREATE INDEX.HTML
       # ============================================
 
-      - name: Add generated PNG files
+      - name: Create Pages index
         run: |
 
-          git add "*.png"
+          cat > public/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
 
-          echo "========================================"
-          echo "GIT STATUS"
-          echo "========================================"
+          <head>
 
-          git status --short
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <meta http-equiv="refresh"
+                  content="300">
+
+            <title>GFS Meteograms</title>
+
+            <style>
+
+              body {
+                margin: 0;
+                padding: 20px;
+                background: #eeeeee;
+                font-family: Arial, sans-serif;
+              }
+
+              h1 {
+                text-align: center;
+                margin-bottom: 5px;
+              }
+
+              .run {
+                text-align: center;
+                margin-bottom: 25px;
+                color: #555;
+              }
+
+              .grid {
+                display: grid;
+                grid-template-columns:
+                  repeat(auto-fit, minmax(450px, 1fr));
+
+                gap: 20px;
+
+                max-width: 1800px;
+
+                margin: auto;
+              }
+
+              .card {
+                background: white;
+
+                padding: 10px;
+
+                border-radius: 8px;
+
+                box-shadow:
+                  0 2px 8px rgba(0,0,0,0.15);
+              }
+
+              .card h2 {
+                text-align: center;
+
+                margin:
+                  5px 0 10px;
+
+                font-size: 18px;
+              }
+
+              .card img {
+                width: 100%;
+                height: auto;
+                display: block;
+              }
+
+            </style>
+
+          </head>
+
+
+          <body>
+
+            <h1>GFS Meteograms</h1>
+
+            <div class="run">
+              Latest GFS run:
+              <strong>${{ env.run_hour }}Z</strong>
+            </div>
+
+
+            <div class="grid">
+
+
+              <div class="card">
+                <h2>Athens</h2>
+                <img src="athens${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Kiato</h2>
+                <img src="kiato${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Lamia</h2>
+                <img src="lamia${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Patra</h2>
+                <img src="patra${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Salonica</h2>
+                <img src="salonica${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Agrinio</h2>
+                <img src="agrinio.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Chania</h2>
+                <img src="chania.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Florina</h2>
+                <img src="florina.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Heraklion</h2>
+                <img src="heraklion.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Ikaria</h2>
+                <img src="ikaria.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Ioannina</h2>
+                <img src="ioannina.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Kefalonia</h2>
+                <img src="kefalonia.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Larisa</h2>
+                <img src="larisa.png">
+              </div>
+
+
+              <div class="card">
+                <h2>Trikala</h2>
+                <img src="trikala.png">
+              </div>
+
+
+              <div class="card">
+                <h2>London</h2>
+                <img src="london.png">
+              </div>
+
+
+            </div>
+
+          </body>
+
+          </html>
+          EOF
 
 
       # ============================================
-      # 9. COMMIT CHANGES
+      # 9. UPLOAD PAGES ARTIFACT
       # ============================================
 
-      - name: Commit meteograms
-        run: |
-
-          if git diff --cached --quiet; then
-
-              echo "ℹ️ No changes to commit."
-
-          else
-
-              git commit -m "Update meteograms - GFS ${{ env.run_hour }}Z"
-
-          fi
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
 
 
       # ============================================
-      # 10. PUSH TO GITHUB
+      # 10. DEPLOY TO GITHUB PAGES
       # ============================================
 
-      - name: Push meteograms to GitHub
-        run: |
-
-          git push origin HEAD:${{ github.ref_name }}
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
 
       # ============================================
@@ -185,9 +360,9 @@ jobs:
           echo "GFS run: ${{ env.run_hour }}Z"
 
           echo ""
-          echo "GitHub repository:"
-          echo "https://github.com/meteogus/gfs-meteograms"
-
-          echo ""
           echo "GitHub Pages:"
           echo "https://meteogus.github.io/gfs-meteograms/"
+
+          echo ""
+          echo "Athens:"
+          echo "https://meteogus.github.io/gfs-meteograms/athens${{ env.run_hour }}.png"
