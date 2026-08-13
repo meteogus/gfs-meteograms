@@ -10,6 +10,7 @@
 
     <title>GFS Meteograms</title>
 
+
     <style>
 
         /* ==========================================
@@ -102,7 +103,7 @@
 
 
         /* ==========================================
-           FULLSCREEN MODAL
+           FULLSCREEN IMAGE MODAL
            ========================================== */
 
         .image-modal {
@@ -158,7 +159,11 @@
 
             border-radius: 5px;
 
-            cursor: default;
+            /*
+             * Clicking the large image closes it.
+             */
+
+            cursor: zoom-out;
 
             box-shadow:
                 0 0 30px rgba(255,255,255,0.15);
@@ -265,6 +270,7 @@
 
                 font-size: 36px;
             }
+
         }
 
     </style>
@@ -394,6 +400,7 @@
             id="modalImage"
             src=""
             alt="Large GFS Meteogram"
+            onclick="closeModal(event)"
         >
 
 
@@ -429,7 +436,7 @@
 
 
             /*
-             * Prevent page scrolling while
+             * Prevent scrolling while
              * the large image is open.
              */
 
@@ -445,8 +452,8 @@
         function closeModal(event) {
 
             /*
-             * Prevent the click from propagating
-             * to the black background.
+             * Prevent the click from
+             * propagating to the background.
              */
 
             if (event) {
@@ -474,15 +481,14 @@
         function closeImage(event) {
 
             /*
-             * Close ONLY when the user clicks
-             * the black background itself.
-             *
-             * Clicking the large image does NOT
-             * close it.
+             * If the user clicks the black
+             * background itself, close.
              */
 
-            if (event.target ===
-                document.getElementById("imageModal")) {
+            if (
+                event.target ===
+                document.getElementById("imageModal")
+            ) {
 
                 closeModal();
             }
