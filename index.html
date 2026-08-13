@@ -8,7 +8,7 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>GFS Meteograms</title>
+    <title>GFS & ECMWF Meteograms</title>
 
 
     <style>
@@ -36,8 +36,16 @@
         }
 
 
+        h2.section-title {
+
+            margin-top: 40px;
+
+            margin-bottom: 25px;
+        }
+
+
         /* ==========================================
-           CITY GRID
+           GRID
            ========================================== */
 
         .grid {
@@ -72,7 +80,7 @@
         }
 
 
-        .city h2 {
+        .city h3 {
 
             margin-top: 0;
 
@@ -103,7 +111,7 @@
 
 
         /* ==========================================
-           FULLSCREEN IMAGE MODAL
+           FULLSCREEN MODAL
            ========================================== */
 
         .image-modal {
@@ -133,8 +141,6 @@
         }
 
 
-        /* Modal ενεργό */
-
         .image-modal.active {
 
             display: flex;
@@ -158,10 +164,6 @@
             object-fit: contain;
 
             border-radius: 5px;
-
-            /*
-             * Clicking the large image closes it.
-             */
 
             cursor: zoom-out;
 
@@ -228,6 +230,16 @@
             }
 
 
+            h2.section-title {
+
+                font-size: 22px;
+
+                margin-top: 30px;
+
+                margin-bottom: 18px;
+            }
+
+
             .grid {
 
                 grid-template-columns: 1fr;
@@ -242,7 +254,7 @@
             }
 
 
-            .city h2 {
+            .city h3 {
 
                 font-size: 20px;
             }
@@ -285,12 +297,17 @@
          PAGE TITLE
          ========================================== -->
 
-    <h1>GFS Meteograms</h1>
+    <h1>GFS & ECMWF Meteograms</h1>
 
 
     <!-- ==========================================
-         CITY GRID
+         GFS SECTION
          ========================================== -->
+
+    <h2 class="section-title">
+        GFS Meteograms
+    </h2>
+
 
     <div class="grid">
 
@@ -299,7 +316,7 @@
 
         <div class="city">
 
-            <h2>Athens</h2>
+            <h3>Athens</h3>
 
             <img
                 src="images/athens_latest.png"
@@ -314,7 +331,7 @@
 
         <div class="city">
 
-            <h2>Kiato</h2>
+            <h3>Kiato</h3>
 
             <img
                 src="images/kiato_latest.png"
@@ -329,7 +346,7 @@
 
         <div class="city">
 
-            <h2>Lamia</h2>
+            <h3>Lamia</h3>
 
             <img
                 src="images/lamia_latest.png"
@@ -344,7 +361,7 @@
 
         <div class="city">
 
-            <h2>Patra</h2>
+            <h3>Patra</h3>
 
             <img
                 src="images/patra_latest.png"
@@ -359,7 +376,7 @@
 
         <div class="city">
 
-            <h2>Salonica</h2>
+            <h3>Salonica</h3>
 
             <img
                 src="images/salonica_latest.png"
@@ -371,6 +388,113 @@
 
 
     </div>
+
+
+
+    <!-- ==========================================
+         ECMWF SECTION
+         ========================================== -->
+
+    <h2 class="section-title">
+        ECMWF Meteograms
+    </h2>
+
+
+    <div class="grid">
+
+
+        <!-- ATHENS -->
+
+        <div class="city">
+
+            <h3>Athens</h3>
+
+            <img
+                src="images/athens_ecmwf.png"
+                alt="Athens ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+        <!-- KIATO -->
+
+        <div class="city">
+
+            <h3>Kiato</h3>
+
+            <img
+                src="images/kiato_ecmwf.png"
+                alt="Kiato ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+        <!-- LAMIA -->
+
+        <div class="city">
+
+            <h3>Lamia</h3>
+
+            <img
+                src="images/lamia_ecmwf.png"
+                alt="Lamia ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+        <!-- PATRA -->
+
+        <div class="city">
+
+            <h3>Patra</h3>
+
+            <img
+                src="images/patra_ecmwf.png"
+                alt="Patra ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+        <!-- SALONICA -->
+
+        <div class="city">
+
+            <h3>Salonica</h3>
+
+            <img
+                src="images/salonica_ecmwf.png"
+                alt="Salonica ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+        <!-- IKARIA -->
+
+        <div class="city">
+
+            <h3>Ikaria</h3>
+
+            <img
+                src="images/ikaria_ecmwf.png"
+                alt="Ikaria ECMWF Meteogram"
+                onclick="openImage(this)"
+            >
+
+        </div>
+
+
+    </div>
+
 
 
     <!-- ==========================================
@@ -399,12 +523,13 @@
         <img
             id="modalImage"
             src=""
-            alt="Large GFS Meteogram"
+            alt="Large Meteogram"
             onclick="closeModal(event)"
         >
 
 
     </div>
+
 
 
     <!-- ==========================================
@@ -435,11 +560,6 @@
             modal.classList.add("active");
 
 
-            /*
-             * Prevent scrolling while
-             * the large image is open.
-             */
-
             document.body.style.overflow = "hidden";
         }
 
@@ -450,11 +570,6 @@
            ========================================== */
 
         function closeModal(event) {
-
-            /*
-             * Prevent the click from
-             * propagating to the background.
-             */
 
             if (event) {
 
@@ -479,11 +594,6 @@
            ========================================== */
 
         function closeImage(event) {
-
-            /*
-             * If the user clicks the black
-             * background itself, close.
-             */
 
             if (
                 event.target ===
