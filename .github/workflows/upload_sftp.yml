@@ -160,6 +160,7 @@ jobs:
 
           echo ""
           echo "Latest files:"
+
           ls -lh images/*_latest.png 2>/dev/null || true
 
 
@@ -174,11 +175,21 @@ jobs:
           echo "ALL PNG FILES"
           echo "========================================"
 
-          find images -maxdepth 1 -name "*.png" -type f -printf "%f\n" | sort
+          find images \
+            -maxdepth 1 \
+            -name "*.png" \
+            -type f \
+            -printf "%f\n" \
+            | sort
 
           echo ""
           echo "Total PNG files:"
-          find images -maxdepth 1 -name "*.png" -type f | wc -l
+
+          find images \
+            -maxdepth 1 \
+            -name "*.png" \
+            -type f \
+            | wc -l
 
 
       # ============================================
@@ -189,7 +200,9 @@ jobs:
         run: |
 
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
 
       # ============================================
@@ -228,13 +241,22 @@ jobs:
 
 
       # ============================================
-      # 12. PUSH
+      # 12. SYNC WITH REMOTE AND PUSH
       # ============================================
 
-      - name: Push meteograms to GitHub
+      - name: Sync with remote and push meteograms
         run: |
 
-          git push origin HEAD:${{ github.ref_name }}
+          echo "========================================"
+          echo "SYNCING WITH REMOTE MAIN"
+          echo "========================================"
+
+          git pull --rebase origin main
+
+          echo ""
+          echo "Pushing meteograms..."
+
+          git push origin HEAD:main
 
 
       # ============================================
