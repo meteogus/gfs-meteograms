@@ -43,14 +43,18 @@
             width: 100%;
             height: auto;
             display: block;
+
+            /* Δείχνει ότι η εικόνα είναι clickable */
             cursor: zoom-in;
+
+            border-radius: 5px;
         }
 
-        /* =========================================
-           LIGHTBOX
-           ========================================= */
+        /* ==========================================
+           FULLSCREEN IMAGE OVERLAY
+           ========================================== */
 
-        .lightbox {
+        .image-modal {
             display: none;
             position: fixed;
             z-index: 9999;
@@ -58,38 +62,86 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.90);
-            justify-content: center;
+
+            background: rgba(0, 0, 0, 0.90);
+
             align-items: center;
+            justify-content: center;
+
             padding: 20px;
             box-sizing: border-box;
-            cursor: zoom-out;
         }
 
-        .lightbox img {
+        .image-modal.active {
+            display: flex;
+        }
+
+        .image-modal img {
             max-width: 95%;
             max-height: 95%;
             width: auto;
             height: auto;
+
             object-fit: contain;
-            box-shadow: 0 0 25px rgba(255,255,255,0.25);
-            cursor: default;
+
+            border-radius: 5px;
+
+            cursor: zoom-out;
+
+            box-shadow: 0 0 25px rgba(255,255,255,0.15);
         }
 
-        .close {
-            position: absolute;
+        /* Κουμπί κλεισίματος */
+
+        .close-button {
+            position: fixed;
             top: 15px;
             right: 25px;
+
             color: white;
             font-size: 40px;
             font-weight: bold;
+
             cursor: pointer;
+
+            z-index: 10000;
+
             line-height: 1;
         }
 
-        .close:hover {
-            opacity: 0.7;
+        .close-button:hover {
+            color: #cccccc;
         }
+
+        /* Καλύτερη εμφάνιση σε κινητό */
+
+        @media (max-width: 600px) {
+
+            body {
+                padding: 10px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .image-modal {
+                padding: 5px;
+            }
+
+            .image-modal img {
+                max-width: 98%;
+                max-height: 90%;
+            }
+
+            .close-button {
+                top: 10px;
+                right: 15px;
+                font-size: 35px;
+            }
+        }
+
     </style>
 </head>
 
@@ -101,89 +153,108 @@
 
         <div class="city">
             <h2>Athens</h2>
-            <img src="athens_latest.png" alt="Athens GFS Meteogram" onclick="openLightbox(this)">
+            <img src="athens_latest.png"
+                 alt="Athens GFS Meteogram"
+                 onclick="openImage(this)">
         </div>
 
         <div class="city">
             <h2>Kiato</h2>
-            <img src="kiato_latest.png" alt="Kiato GFS Meteogram" onclick="openLightbox(this)">
+            <img src="kiato_latest.png"
+                 alt="Kiato GFS Meteogram"
+                 onclick="openImage(this)">
         </div>
 
         <div class="city">
             <h2>Lamia</h2>
-            <img src="lamia_latest.png" alt="Lamia GFS Meteogram" onclick="openLightbox(this)">
+            <img src="lamia_latest.png"
+                 alt="Lamia GFS Meteogram"
+                 onclick="openImage(this)">
         </div>
 
         <div class="city">
             <h2>Patra</h2>
-            <img src="patra_latest.png" alt="Patra GFS Meteogram" onclick="openLightbox(this)">
+            <img src="patra_latest.png"
+                 alt="Patra GFS Meteogram"
+                 onclick="openImage(this)">
         </div>
 
         <div class="city">
             <h2>Salonica</h2>
-            <img src="salonica_latest.png" alt="Salonica GFS Meteogram" onclick="openLightbox(this)">
+            <img src="salonica_latest.png"
+                 alt="Salonica GFS Meteogram"
+                 onclick="openImage(this)">
         </div>
 
     </div>
 
 
-    <!-- =========================================
-         LIGHTBOX
-         ========================================= -->
+    <!-- ==========================================
+         IMAGE MODAL
+         ========================================== -->
 
-    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+    <div id="imageModal"
+         class="image-modal"
+         onclick="closeImage(event)">
 
-        <span class="close" onclick="closeLightbox(event)">
-            &times;
-        </span>
+        <span class="close-button"
+              onclick="closeModal()">×</span>
 
-        <img id="lightboxImage" src="" alt="Zoomed meteogram">
+        <img id="modalImage"
+             src=""
+             alt="Large GFS Meteogram">
 
     </div>
 
 
     <script>
 
-        function openLightbox(image) {
+        function openImage(image) {
 
-            const lightbox = document.getElementById("lightbox");
-            const lightboxImage = document.getElementById("lightboxImage");
+            const modal = document.getElementById("imageModal");
+            const modalImage = document.getElementById("modalImage");
 
-            lightboxImage.src = image.src;
+            modalImage.src = image.src;
+            modalImage.alt = image.alt;
 
-            lightbox.style.display = "flex";
+            modal.classList.add("active");
+
+            // Αποτρέπει το scrolling της σελίδας
+            document.body.style.overflow = "hidden";
         }
 
 
-        function closeLightbox(event) {
+        function closeModal() {
+
+            const modal = document.getElementById("imageModal");
+
+            modal.classList.remove("active");
+
+            document.body.style.overflow = "auto";
+        }
+
+
+        function closeImage(event) {
 
             /*
-             * Close only when:
-             * - clicking the dark background
-             * - clicking the X
+             * Κλείνει μόνο όταν πατηθεί το
+             * μαύρο background και όχι η ίδια η εικόνα.
              */
 
-            if (
-                event.target.id === "lightbox" ||
-                event.target.classList.contains("close")
-            ) {
-
-                document.getElementById("lightbox").style.display = "none";
-
-                document.getElementById("lightboxImage").src = "";
+            if (event.target.id === "imageModal") {
+                closeModal();
             }
         }
 
 
-        /* ESC key closes zoom */
+        /*
+         * Κλείσιμο με το πλήκτρο ESC
+         */
 
         document.addEventListener("keydown", function(event) {
 
             if (event.key === "Escape") {
-
-                document.getElementById("lightbox").style.display = "none";
-
-                document.getElementById("lightboxImage").src = "";
+                closeModal();
             }
 
         });
