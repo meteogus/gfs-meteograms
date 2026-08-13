@@ -61,7 +61,7 @@ jobs:
           python trikala.py
           python london.py
 
-            - name: Upload images via SFTP
+      - name: Upload images via SFTP
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
