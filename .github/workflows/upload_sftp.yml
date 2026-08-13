@@ -53,10 +53,13 @@ jobs:
 
           if ((hour >= 0 && hour < 6)); then
               run_hour="00"
+
           elif ((hour >= 6 && hour < 12)); then
               run_hour="06"
+
           elif ((hour >= 12 && hour < 18)); then
               run_hour="12"
+
           else
               run_hour="18"
           fi
@@ -95,30 +98,36 @@ jobs:
 
 
       # ============================================
-      # 6. CREATE LATEST FILES
+      # 6. CREATE LATEST COPIES
       # ============================================
 
-      - name: Update latest meteogram files
+      - name: Create latest copies
         run: |
 
           echo "========================================"
-          echo "UPDATING LATEST METEOGRAM FILES"
+          echo "CREATING LATEST METEOGRAM COPIES"
           echo "========================================"
 
-          cp "athens${run_hour}.png" athens_latest.png
-          cp "kiato${run_hour}.png" kiato_latest.png
-          cp "lamia${run_hour}.png" lamia_latest.png
-          cp "patra${run_hour}.png" patra_latest.png
-          cp "salonica${run_hour}.png" salonica_latest.png
+          cp "athens${{ env.run_hour }}.png" athens_latest.png
+          cp "kiato${{ env.run_hour }}.png" kiato_latest.png
+          cp "lamia${{ env.run_hour }}.png" lamia_latest.png
+          cp "patra${{ env.run_hour }}.png" patra_latest.png
+          cp "salonica${{ env.run_hour }}.png" salonica_latest.png
+
+          cp "agrinio.png" agrinio_latest.png
+          cp "chania.png" chania_latest.png
+          cp "florina.png" florina_latest.png
+          cp "heraklion.png" heraklion_latest.png
+          cp "ikaria.png" ikaria_latest.png
+          cp "ioannina.png" ioannina_latest.png
+          cp "kefalonia.png" kefalonia_latest.png
+          cp "larisa.png" larisa_latest.png
+          cp "trikala.png" trikala_latest.png
+          cp "london.png" london_latest.png
 
           echo ""
-          echo "Latest files:"
-          ls -lh \
-            athens_latest.png \
-            kiato_latest.png \
-            lamia_latest.png \
-            patra_latest.png \
-            salonica_latest.png
+          echo "Latest files created:"
+          ls -lh *_latest.png
 
 
       # ============================================
@@ -179,7 +188,7 @@ jobs:
 
           else
 
-              git commit -m "Update GFS meteograms - ${{ env.run_hour }}Z"
+              git commit -m "Update meteograms - GFS ${{ env.run_hour }}Z"
 
           fi
 
@@ -195,27 +204,43 @@ jobs:
 
 
       # ============================================
-      # 12. SUMMARY
+      # 12. FINISHED
       # ============================================
 
       - name: Publish summary
         run: |
 
           echo "========================================"
-          echo "✅ GFS METEOGRAM PUBLICATION COMPLETE"
+          echo "✅ METEOGRAM PUBLICATION COMPLETE"
           echo "========================================"
 
           echo ""
           echo "GFS run: ${{ env.run_hour }}Z"
 
           echo ""
-          echo "Latest URLs:"
-          echo "https://meteogus.github.io/gfs-meteograms/athens_latest.png"
-          echo "https://meteogus.github.io/gfs-meteograms/kiato_latest.png"
-          echo "https://meteogus.github.io/gfs-meteograms/lamia_latest.png"
-          echo "https://meteogus.github.io/gfs-meteograms/patra_latest.png"
-          echo "https://meteogus.github.io/gfs-meteograms/salonica_latest.png"
+          echo "GitHub repository:"
+          echo "https://github.com/meteogus/gfs-meteograms"
 
           echo ""
           echo "GitHub Pages:"
           echo "https://meteogus.github.io/gfs-meteograms/"
+
+          echo ""
+          echo "Latest Athens:"
+          echo "https://meteogus.github.io/gfs-meteograms/athens_latest.png"
+
+          echo ""
+          echo "Latest Kiato:"
+          echo "https://meteogus.github.io/gfs-meteograms/kiato_latest.png"
+
+          echo ""
+          echo "Latest Lamia:"
+          echo "https://meteogus.github.io/gfs-meteograms/lamia_latest.png"
+
+          echo ""
+          echo "Latest Patra:"
+          echo "https://meteogus.github.io/gfs-meteograms/patra_latest.png"
+
+          echo ""
+          echo "Latest Salonica:"
+          echo "https://meteogus.github.io/gfs-meteograms/salonica_latest.png"
