@@ -1,39 +1,65 @@
-name: Run and Upload Meteograms via SFTP
+name: Run and Publish Meteograms
 
 on:
   workflow_dispatch:
   repository_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build-and-upload:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================
+      # 1. CHECKOUT REPOSITORY
+      # ============================================
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+
+      # ============================================
+      # 2. SET UP PYTHON
+      # ============================================
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+
+      # ============================================
+      # 3. INSTALL DEPENDENCIES
+      # ============================================
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install paramiko
+
+
+      # ============================================
+      # 4. DETERMINE GFS RUN HOUR
+      # ============================================
 
       - name: Determine GFS run hour
         id: gfs_run
         run: |
+
           hour=$(date -u +"%H")
 
           if ((hour >= 0 && hour < 6)); then
               run_hour="00"
+
           elif ((hour >= 6 && hour < 12)); then
               run_hour="06"
+
           elif ((hour >= 12 && hour < 18)); then
               run_hour="12"
+
           else
               run_hour="18"
           fi
@@ -43,8 +69,14 @@ jobs:
 
           echo "run_hour=$run_hour" >> "$GITHUB_ENV"
 
+
+      # ============================================
+      # 5. RUN METEOGRAM SCRIPTS
+      # ============================================
+
       - name: Run meteogram scripts
         run: |
+
           python athens.py
           python kiato.py
           python lamia.py
@@ -61,179 +93,101 @@ jobs:
           python trikala.py
           python london.py
 
-      - name: Upload images via SFTP
         env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          SFTP_PASS: ${{ secrets.SFTP_PASS }}
-          SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
           RUN_HOUR: ${{ env.run_hour }}
 
+
+      # ============================================
+      # 6. CHECK GENERATED FILES
+      # ============================================
+
+      - name: Check generated PNG files
         run: |
-          python - <<'PYEOF'
-          import paramiko
-          import os
-          import sys
-          import posixpath
 
-          run_hour = os.getenv("RUN_HOUR", "00")
+          echo "========================================"
+          echo "GENERATED METEOGRAM FILES"
+          echo "========================================"
 
-          files = [
-              f"athens{run_hour}.png",
-              f"kiato{run_hour}.png",
-              f"lamia{run_hour}.png",
-              f"patra{run_hour}.png",
-              f"salonica{run_hour}.png",
-              "agrinio.png",
-              "chania.png",
-              "florina.png",
-              "heraklion.png",
-              "ikaria.png",
-              "ioannina.png",
-              "kefalonia.png",
-              "larisa.png",
-              "trikala.png",
-              "london.png",
-          ]
+          ls -lh *.png
 
-          host = os.getenv("SFTP_HOST")
-          port = int(os.getenv("SFTP_PORT", "22"))
-          user = os.getenv("SFTP_USER")
-          password = os.getenv("SFTP_PASS")
-          folder = os.getenv("SFTP_FOLDER", "/").rstrip("/")
+          echo ""
+          echo "Total PNG files:"
+          find . -maxdepth 1 -name "*.png" | wc -l
 
-          print(f"🕒 Using run_hour: {run_hour}")
-          print(f"📡 Connecting to {host}:{port} as {user} ...")
 
-          try:
-              transport = paramiko.Transport((host, port))
+      # ============================================
+      # 7. CONFIGURE GIT
+      # ============================================
 
-              transport.connect(
-                  username=user,
-                  password=password
-              )
+      - name: Configure Git
+        run: |
 
-              sftp = paramiko.SFTPClient.from_transport(
-                  transport
-              )
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-              print("✅ SFTP connection established")
 
-          except Exception as e:
-              print(f"❌ SFTP connection failed: {repr(e)}")
-              sys.exit(1)
+      # ============================================
+      # 8. ADD PNG FILES
+      # ============================================
 
-          failed = []
+      - name: Add generated PNG files
+        run: |
 
-          for filename in files:
+          git add "*.png"
 
-              local_path = filename
-              remote_path = posixpath.join(
-                  folder,
-                  filename
-              )
+          echo "========================================"
+          echo "GIT STATUS"
+          echo "========================================"
 
-              if not os.path.exists(local_path):
-                  print(
-                      f"❌ Local file not found: "
-                      f"{local_path}"
-                  )
-                  failed.append(filename)
-                  continue
+          git status --short
 
-              local_size = os.path.getsize(local_path)
 
-              print("")
-              print(
-                  f"⬆️ Uploading {filename} "
-                  f"({local_size:,} bytes)"
-              )
+      # ============================================
+      # 9. COMMIT CHANGES
+      # ============================================
 
-              try:
+      - name: Commit meteograms
+        run: |
 
-                  # Open local file
-                  with open(local_path, "rb") as local_file:
+          if git diff --cached --quiet; then
 
-                      # Open remote file explicitly
-                      remote_file = sftp.file(
-                          remote_path,
-                          "wb"
-                      )
+              echo "ℹ️ No changes to commit."
 
-                      # Write in chunks
-                      while True:
+          else
 
-                          chunk = local_file.read(32768)
+              git commit -m "Update meteograms - GFS ${{ env.run_hour }}Z"
 
-                          if not chunk:
-                              break
+          fi
 
-                          remote_file.write(chunk)
 
-                      # Force transmission
-                      remote_file.flush()
+      # ============================================
+      # 10. PUSH TO GITHUB
+      # ============================================
 
-                      # Close remote file
-                      remote_file.close()
+      - name: Push meteograms to GitHub
+        run: |
 
-                  # Verify remote size
-                  remote_attr = sftp.stat(remote_path)
-                  remote_size = remote_attr.st_size
+          git push origin HEAD:${{ github.ref_name }}
 
-                  print(
-                      f"Remote size: "
-                      f"{remote_size:,} bytes"
-                  )
 
-                  if remote_size != local_size:
+      # ============================================
+      # 11. FINISHED
+      # ============================================
 
-                      print(
-                          f"❌ SIZE MISMATCH: "
-                          f"{remote_size:,} != "
-                          f"{local_size:,}"
-                      )
+      - name: Publish summary
+        run: |
 
-                      failed.append(filename)
+          echo "========================================"
+          echo "✅ METEOGRAM PUBLICATION COMPLETE"
+          echo "========================================"
 
-                  else:
+          echo ""
+          echo "GFS run: ${{ env.run_hour }}Z"
 
-                      print(
-                          f"✅ Upload successful: "
-                          f"{filename}"
-                      )
+          echo ""
+          echo "GitHub repository:"
+          echo "https://github.com/meteogus/gfs-meteograms"
 
-              except Exception as e:
-
-                  print(
-                      f"❌ Failed to upload "
-                      f"{filename}: {repr(e)}"
-                  )
-
-                  failed.append(filename)
-
-          sftp.close()
-          transport.close()
-
-          print("")
-          print("========================================")
-
-          if failed:
-
-              print(
-                  f"❌ Failed files: "
-                  f"{len(failed)}"
-              )
-
-              for filename in failed:
-                  print(f"   - {filename}")
-
-              print("========================================")
-
-              sys.exit(1)
-
-          else:
-
-              print("✅ ALL FILES UPLOADED SUCCESSFULLY")
-              print("========================================")
-          PYEOF
+          echo ""
+          echo "GitHub Pages:"
+          echo "https://meteogus.github.io/gfs-meteograms/"
