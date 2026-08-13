@@ -10,51 +10,33 @@
 
     <title>GFS Meteograms</title>
 
-
     <style>
 
         /* ==========================================
-           GENERAL
+           PAGE
            ========================================== */
-
-        * {
-            box-sizing: border-box;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            overflow-x: hidden;
-        }
 
         body {
 
             font-family: Arial, sans-serif;
 
+            margin: 0;
+            padding: 20px;
+
             background: #f4f4f4;
 
             text-align: center;
-
-            padding: 20px;
         }
 
-
-        /* ==========================================
-           TITLE
-           ========================================== */
 
         h1 {
 
-            margin: 0 0 30px 0;
-
-            font-size: 32px;
+            margin-bottom: 30px;
         }
 
 
         /* ==========================================
-           GRID
+           CITY GRID
            ========================================== */
 
         .grid {
@@ -98,7 +80,7 @@
 
 
         /* ==========================================
-           NORMAL METEOGRAM IMAGE
+           METEOGRAM IMAGE
            ========================================== */
 
         .city img {
@@ -113,12 +95,14 @@
 
             cursor: zoom-in;
 
-            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+
+            -webkit-user-drag: none;
         }
 
 
         /* ==========================================
-           FULLSCREEN IMAGE MODAL
+           FULLSCREEN MODAL
            ========================================== */
 
         .image-modal {
@@ -136,7 +120,7 @@
             height: 100%;
 
             background:
-                rgba(0, 0, 0, 0.90);
+                rgba(0, 0, 0, 0.92);
 
             align-items: center;
 
@@ -145,8 +129,14 @@
             padding: 20px;
 
             box-sizing: border-box;
+        }
 
-            cursor: zoom-out;
+
+        /* Modal ενεργό */
+
+        .image-modal.active {
+
+            display: flex;
         }
 
 
@@ -156,9 +146,9 @@
 
         .image-modal img {
 
-            max-width: 95%;
+            max-width: 96%;
 
-            max-height: 95%;
+            max-height: 96%;
 
             width: auto;
 
@@ -168,14 +158,14 @@
 
             border-radius: 5px;
 
-            cursor: zoom-out;
+            cursor: default;
 
             box-shadow:
-                0 0 25px rgba(255,255,255,0.15);
-
-            -webkit-user-select: none;
+                0 0 30px rgba(255,255,255,0.15);
 
             user-select: none;
+
+            -webkit-user-drag: none;
         }
 
 
@@ -195,7 +185,7 @@
 
             color: white;
 
-            font-size: 40px;
+            font-size: 42px;
 
             font-weight: bold;
 
@@ -203,7 +193,7 @@
 
             cursor: pointer;
 
-            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
 
@@ -214,7 +204,7 @@
 
 
         /* ==========================================
-           TABLET / MOBILE
+           MOBILE
            ========================================== */
 
         @media (max-width: 600px) {
@@ -249,9 +239,7 @@
 
             .city h2 {
 
-                font-size: 21px;
-
-                margin-bottom: 10px;
+                font-size: 20px;
             }
 
 
@@ -263,7 +251,7 @@
 
             .image-modal img {
 
-                max-width: 98%;
+                max-width: 99%;
 
                 max-height: 92%;
             }
@@ -277,7 +265,6 @@
 
                 font-size: 36px;
             }
-
         }
 
     </style>
@@ -308,9 +295,11 @@
 
             <h2>Athens</h2>
 
-            <img src="athens_latest.png"
-                 alt="Athens GFS Meteogram"
-                 onclick="openImage(this)">
+            <img
+                src="images/athens_latest.png"
+                alt="Athens GFS Meteogram"
+                onclick="openImage(this)"
+            >
 
         </div>
 
@@ -321,9 +310,11 @@
 
             <h2>Kiato</h2>
 
-            <img src="kiato_latest.png"
-                 alt="Kiato GFS Meteogram"
-                 onclick="openImage(this)">
+            <img
+                src="images/kiato_latest.png"
+                alt="Kiato GFS Meteogram"
+                onclick="openImage(this)"
+            >
 
         </div>
 
@@ -334,9 +325,11 @@
 
             <h2>Lamia</h2>
 
-            <img src="lamia_latest.png"
-                 alt="Lamia GFS Meteogram"
-                 onclick="openImage(this)">
+            <img
+                src="images/lamia_latest.png"
+                alt="Lamia GFS Meteogram"
+                onclick="openImage(this)"
+            >
 
         </div>
 
@@ -347,9 +340,11 @@
 
             <h2>Patra</h2>
 
-            <img src="patra_latest.png"
-                 alt="Patra GFS Meteogram"
-                 onclick="openImage(this)">
+            <img
+                src="images/patra_latest.png"
+                alt="Patra GFS Meteogram"
+                onclick="openImage(this)"
+            >
 
         </div>
 
@@ -360,9 +355,11 @@
 
             <h2>Salonica</h2>
 
-            <img src="salonica_latest.png"
-                 alt="Salonica GFS Meteogram"
-                 onclick="openImage(this)">
+            <img
+                src="images/salonica_latest.png"
+                alt="Salonica GFS Meteogram"
+                onclick="openImage(this)"
+            >
 
         </div>
 
@@ -371,30 +368,33 @@
 
 
     <!-- ==========================================
-         FULLSCREEN IMAGE MODAL
+         IMAGE MODAL
          ========================================== -->
 
-    <div id="imageModal"
-         class="image-modal"
-         onclick="closeImage(event)">
+    <div
+        id="imageModal"
+        class="image-modal"
+        onclick="closeImage(event)"
+    >
 
 
         <!-- CLOSE BUTTON -->
 
-        <span class="close-button"
-              onclick="closeModal()">
-
+        <span
+            class="close-button"
+            onclick="closeModal(event)"
+        >
             ×
-
         </span>
 
 
         <!-- LARGE IMAGE -->
 
-        <img id="modalImage"
-             src=""
-             alt="Large GFS Meteogram"
-             onclick="closeModal()">
+        <img
+            id="modalImage"
+            src=""
+            alt="Large GFS Meteogram"
+        >
 
 
     </div>
@@ -425,15 +425,12 @@
             modalImage.alt = image.alt;
 
 
-            /*
-             * Show fullscreen modal
-             */
-
-            modal.style.display = "flex";
+            modal.classList.add("active");
 
 
             /*
-             * Prevent background scrolling
+             * Prevent page scrolling while
+             * the large image is open.
              */
 
             document.body.style.overflow = "hidden";
@@ -445,18 +442,25 @@
            CLOSE MODAL
            ========================================== */
 
-        function closeModal() {
+        function closeModal(event) {
+
+            /*
+             * Prevent the click from propagating
+             * to the black background.
+             */
+
+            if (event) {
+
+                event.stopPropagation();
+            }
+
 
             const modal =
                 document.getElementById("imageModal");
 
 
-            modal.style.display = "none";
+            modal.classList.remove("active");
 
-
-            /*
-             * Restore page scrolling
-             */
 
             document.body.style.overflow = "auto";
         }
@@ -464,32 +468,30 @@
 
 
         /* ==========================================
-           CLOSE WHEN CLICKING BACKGROUND
+           CLOSE BY CLICKING BLACK BACKGROUND
            ========================================== */
 
         function closeImage(event) {
 
             /*
-             * Close only when clicking
-             * the black background.
+             * Close ONLY when the user clicks
+             * the black background itself.
              *
-             * Clicking the large image itself
-             * is handled separately by
-             * onclick="closeModal()".
+             * Clicking the large image does NOT
+             * close it.
              */
 
-            if (event.target.id === "imageModal") {
+            if (event.target ===
+                document.getElementById("imageModal")) {
 
                 closeModal();
-
             }
-
         }
 
 
 
         /* ==========================================
-           ESC KEY
+           CLOSE WITH ESC
            ========================================== */
 
         document.addEventListener(
@@ -499,7 +501,6 @@
                 if (event.key === "Escape") {
 
                     closeModal();
-
                 }
 
             }
