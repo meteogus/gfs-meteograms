@@ -6,11 +6,8 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
-
   build-and-publish:
     runs-on: ubuntu-latest
 
@@ -49,19 +46,17 @@ jobs:
       # ============================================
 
       - name: Determine GFS run hour
+        id: gfs_run
         run: |
 
           hour=$(date -u +"%H")
 
           if ((hour >= 0 && hour < 6)); then
               run_hour="00"
-
           elif ((hour >= 6 && hour < 12)); then
               run_hour="06"
-
           elif ((hour >= 12 && hour < 18)); then
               run_hour="12"
-
           else
               run_hour="18"
           fi
@@ -100,7 +95,34 @@ jobs:
 
 
       # ============================================
-      # 6. CHECK GENERATED FILES
+      # 6. CREATE LATEST FILES
+      # ============================================
+
+      - name: Update latest meteogram files
+        run: |
+
+          echo "========================================"
+          echo "UPDATING LATEST METEOGRAM FILES"
+          echo "========================================"
+
+          cp "athens${run_hour}.png" athens_latest.png
+          cp "kiato${run_hour}.png" kiato_latest.png
+          cp "lamia${run_hour}.png" lamia_latest.png
+          cp "patra${run_hour}.png" patra_latest.png
+          cp "salonica${run_hour}.png" salonica_latest.png
+
+          echo ""
+          echo "Latest files:"
+          ls -lh \
+            athens_latest.png \
+            kiato_latest.png \
+            lamia_latest.png \
+            patra_latest.png \
+            salonica_latest.png
+
+
+      # ============================================
+      # 7. CHECK GENERATED FILES
       # ============================================
 
       - name: Check generated PNG files
@@ -118,251 +140,82 @@ jobs:
 
 
       # ============================================
-      # 7. PREPARE GITHUB PAGES
+      # 8. CONFIGURE GIT
       # ============================================
 
-      - name: Prepare Pages directory
+      - name: Configure Git
         run: |
 
-          mkdir -p public
-
-          cp *.png public/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 
       # ============================================
-      # 8. CREATE INDEX.HTML
+      # 9. ADD PNG FILES
       # ============================================
 
-      - name: Create Pages index
+      - name: Add generated PNG files
         run: |
 
-          cat > public/index.html <<'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
+          git add "*.png"
 
-          <head>
+          echo "========================================"
+          echo "GIT STATUS"
+          echo "========================================"
 
-            <meta charset="UTF-8">
-
-            <meta name="viewport"
-                  content="width=device-width, initial-scale=1.0">
-
-            <meta http-equiv="refresh"
-                  content="300">
-
-            <title>GFS Meteograms</title>
-
-            <style>
-
-              body {
-                margin: 0;
-                padding: 20px;
-                background: #eeeeee;
-                font-family: Arial, sans-serif;
-              }
-
-              h1 {
-                text-align: center;
-                margin-bottom: 5px;
-              }
-
-              .run {
-                text-align: center;
-                margin-bottom: 25px;
-                color: #555;
-              }
-
-              .grid {
-                display: grid;
-                grid-template-columns:
-                  repeat(auto-fit, minmax(450px, 1fr));
-
-                gap: 20px;
-
-                max-width: 1800px;
-
-                margin: auto;
-              }
-
-              .card {
-                background: white;
-
-                padding: 10px;
-
-                border-radius: 8px;
-
-                box-shadow:
-                  0 2px 8px rgba(0,0,0,0.15);
-              }
-
-              .card h2 {
-                text-align: center;
-
-                margin:
-                  5px 0 10px;
-
-                font-size: 18px;
-              }
-
-              .card img {
-                width: 100%;
-                height: auto;
-                display: block;
-              }
-
-            </style>
-
-          </head>
-
-
-          <body>
-
-            <h1>GFS Meteograms</h1>
-
-            <div class="run">
-              Latest GFS run:
-              <strong>${{ env.run_hour }}Z</strong>
-            </div>
-
-
-            <div class="grid">
-
-
-              <div class="card">
-                <h2>Athens</h2>
-                <img src="athens${{ env.run_hour }}.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Kiato</h2>
-                <img src="kiato${{ env.run_hour }}.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Lamia</h2>
-                <img src="lamia${{ env.run_hour }}.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Patra</h2>
-                <img src="patra${{ env.run_hour }}.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Salonica</h2>
-                <img src="salonica${{ env.run_hour }}.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Agrinio</h2>
-                <img src="agrinio.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Chania</h2>
-                <img src="chania.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Florina</h2>
-                <img src="florina.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Heraklion</h2>
-                <img src="heraklion.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Ikaria</h2>
-                <img src="ikaria.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Ioannina</h2>
-                <img src="ioannina.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Kefalonia</h2>
-                <img src="kefalonia.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Larisa</h2>
-                <img src="larisa.png">
-              </div>
-
-
-              <div class="card">
-                <h2>Trikala</h2>
-                <img src="trikala.png">
-              </div>
-
-
-              <div class="card">
-                <h2>London</h2>
-                <img src="london.png">
-              </div>
-
-
-            </div>
-
-          </body>
-
-          </html>
-          EOF
+          git status --short
 
 
       # ============================================
-      # 9. UPLOAD PAGES ARTIFACT
+      # 10. COMMIT CHANGES
       # ============================================
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./public
+      - name: Commit meteograms
+        run: |
+
+          if git diff --cached --quiet; then
+
+              echo "ℹ️ No changes to commit."
+
+          else
+
+              git commit -m "Update GFS meteograms - ${{ env.run_hour }}Z"
+
+          fi
 
 
       # ============================================
-      # 10. DEPLOY TO GITHUB PAGES
+      # 11. PUSH TO GITHUB
       # ============================================
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Push meteograms to GitHub
+        run: |
+
+          git push origin HEAD:${{ github.ref_name }}
 
 
       # ============================================
-      # 11. FINISHED
+      # 12. SUMMARY
       # ============================================
 
       - name: Publish summary
         run: |
 
           echo "========================================"
-          echo "✅ METEOGRAM PUBLICATION COMPLETE"
+          echo "✅ GFS METEOGRAM PUBLICATION COMPLETE"
           echo "========================================"
 
           echo ""
           echo "GFS run: ${{ env.run_hour }}Z"
 
           echo ""
-          echo "GitHub Pages:"
-          echo "https://meteogus.github.io/gfs-meteograms/"
+          echo "Latest URLs:"
+          echo "https://meteogus.github.io/gfs-meteograms/athens_latest.png"
+          echo "https://meteogus.github.io/gfs-meteograms/kiato_latest.png"
+          echo "https://meteogus.github.io/gfs-meteograms/lamia_latest.png"
+          echo "https://meteogus.github.io/gfs-meteograms/patra_latest.png"
+          echo "https://meteogus.github.io/gfs-meteograms/salonica_latest.png"
 
           echo ""
-          echo "Athens:"
-          echo "https://meteogus.github.io/gfs-meteograms/athens${{ env.run_hour }}.png"
+          echo "GitHub Pages:"
+          echo "https://meteogus.github.io/gfs-meteograms/"
