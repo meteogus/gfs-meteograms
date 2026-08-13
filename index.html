@@ -1,85 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>GFS Meteograms</title>
 
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f4f4f4;
-            text-align: center;
-        }
-
-        h1 {
-            margin-bottom: 30px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .city {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-
-        .city h2 {
-            margin-top: 0;
-            margin-bottom: 12px;
-        }
-
-        .city img {
-            width: 100%;
-            height: auto;
-            display: block;
-
-            /* Δείχνει ότι η εικόνα είναι clickable */
-            cursor: zoom-in;
-
-            border-radius: 5px;
-        }
 
         /* ==========================================
-           FULLSCREEN IMAGE OVERLAY
+           GENERAL
            ========================================== */
 
-        .image-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-
-            background: rgba(0, 0, 0, 0.90);
-
-            align-items: center;
-            justify-content: center;
-
-            padding: 20px;
+        * {
             box-sizing: border-box;
         }
 
-        .image-modal.active {
-            display: flex;
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
         }
 
+        body {
+
+            font-family: Arial, sans-serif;
+
+            background: #f4f4f4;
+
+            text-align: center;
+
+            padding: 20px;
+        }
+
+
+        /* ==========================================
+           TITLE
+           ========================================== */
+
+        h1 {
+
+            margin: 0 0 30px 0;
+
+            font-size: 32px;
+        }
+
+
+        /* ==========================================
+           GRID
+           ========================================== */
+
+        .grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(320px, 1fr));
+
+            gap: 25px;
+
+            max-width: 1400px;
+
+            margin: auto;
+        }
+
+
+        /* ==========================================
+           CITY CARD
+           ========================================== */
+
+        .city {
+
+            background: white;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            box-shadow:
+                0 2px 8px rgba(0,0,0,0.15);
+        }
+
+
+        .city h2 {
+
+            margin-top: 0;
+
+            margin-bottom: 12px;
+        }
+
+
+        /* ==========================================
+           NORMAL METEOGRAM IMAGE
+           ========================================== */
+
+        .city img {
+
+            width: 100%;
+
+            height: auto;
+
+            display: block;
+
+            border-radius: 5px;
+
+            cursor: zoom-in;
+
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+        /* ==========================================
+           FULLSCREEN IMAGE MODAL
+           ========================================== */
+
+        .image-modal {
+
+            display: none;
+
+            position: fixed;
+
+            z-index: 9999;
+
+            left: 0;
+            top: 0;
+
+            width: 100%;
+            height: 100%;
+
+            background:
+                rgba(0, 0, 0, 0.90);
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            box-sizing: border-box;
+
+            cursor: zoom-out;
+        }
+
+
+        /* ==========================================
+           LARGE IMAGE
+           ========================================== */
+
         .image-modal img {
+
             max-width: 95%;
+
             max-height: 95%;
+
             width: auto;
+
             height: auto;
 
             object-fit: contain;
@@ -88,178 +170,345 @@
 
             cursor: zoom-out;
 
-            box-shadow: 0 0 25px rgba(255,255,255,0.15);
+            box-shadow:
+                0 0 25px rgba(255,255,255,0.15);
+
+            -webkit-user-select: none;
+
+            user-select: none;
         }
 
-        /* Κουμπί κλεισίματος */
+
+        /* ==========================================
+           CLOSE BUTTON
+           ========================================== */
 
         .close-button {
+
             position: fixed;
+
             top: 15px;
+
             right: 25px;
-
-            color: white;
-            font-size: 40px;
-            font-weight: bold;
-
-            cursor: pointer;
 
             z-index: 10000;
 
+            color: white;
+
+            font-size: 40px;
+
+            font-weight: bold;
+
             line-height: 1;
+
+            cursor: pointer;
+
+            -webkit-tap-highlight-color: transparent;
         }
 
+
         .close-button:hover {
+
             color: #cccccc;
         }
 
-        /* Καλύτερη εμφάνιση σε κινητό */
+
+        /* ==========================================
+           TABLET / MOBILE
+           ========================================== */
 
         @media (max-width: 600px) {
 
             body {
+
                 padding: 10px;
             }
 
+
+            h1 {
+
+                font-size: 26px;
+
+                margin-bottom: 20px;
+            }
+
+
             .grid {
+
                 grid-template-columns: 1fr;
+
                 gap: 15px;
             }
 
+
+            .city {
+
+                padding: 10px;
+            }
+
+
+            .city h2 {
+
+                font-size: 21px;
+
+                margin-bottom: 10px;
+            }
+
+
             .image-modal {
+
                 padding: 5px;
             }
 
+
             .image-modal img {
+
                 max-width: 98%;
-                max-height: 90%;
+
+                max-height: 92%;
             }
 
+
             .close-button {
+
                 top: 10px;
+
                 right: 15px;
-                font-size: 35px;
+
+                font-size: 36px;
             }
+
         }
 
     </style>
+
 </head>
+
 
 <body>
 
+
+    <!-- ==========================================
+         PAGE TITLE
+         ========================================== -->
+
     <h1>GFS Meteograms</h1>
+
+
+    <!-- ==========================================
+         CITY GRID
+         ========================================== -->
 
     <div class="grid">
 
+
+        <!-- ATHENS -->
+
         <div class="city">
+
             <h2>Athens</h2>
+
             <img src="athens_latest.png"
                  alt="Athens GFS Meteogram"
                  onclick="openImage(this)">
+
         </div>
 
+
+        <!-- KIATO -->
+
         <div class="city">
+
             <h2>Kiato</h2>
+
             <img src="kiato_latest.png"
                  alt="Kiato GFS Meteogram"
                  onclick="openImage(this)">
+
         </div>
 
+
+        <!-- LAMIA -->
+
         <div class="city">
+
             <h2>Lamia</h2>
+
             <img src="lamia_latest.png"
                  alt="Lamia GFS Meteogram"
                  onclick="openImage(this)">
+
         </div>
 
+
+        <!-- PATRA -->
+
         <div class="city">
+
             <h2>Patra</h2>
+
             <img src="patra_latest.png"
                  alt="Patra GFS Meteogram"
                  onclick="openImage(this)">
+
         </div>
 
+
+        <!-- SALONICA -->
+
         <div class="city">
+
             <h2>Salonica</h2>
+
             <img src="salonica_latest.png"
                  alt="Salonica GFS Meteogram"
                  onclick="openImage(this)">
+
         </div>
+
 
     </div>
 
 
     <!-- ==========================================
-         IMAGE MODAL
+         FULLSCREEN IMAGE MODAL
          ========================================== -->
 
     <div id="imageModal"
          class="image-modal"
          onclick="closeImage(event)">
 
+
+        <!-- CLOSE BUTTON -->
+
         <span class="close-button"
-              onclick="closeModal()">×</span>
+              onclick="closeModal()">
+
+            ×
+
+        </span>
+
+
+        <!-- LARGE IMAGE -->
 
         <img id="modalImage"
              src=""
-             alt="Large GFS Meteogram">
+             alt="Large GFS Meteogram"
+             onclick="closeModal()">
+
 
     </div>
 
 
+    <!-- ==========================================
+         JAVASCRIPT
+         ========================================== -->
+
     <script>
+
+
+        /* ==========================================
+           OPEN IMAGE
+           ========================================== */
 
         function openImage(image) {
 
-            const modal = document.getElementById("imageModal");
-            const modalImage = document.getElementById("modalImage");
+            const modal =
+                document.getElementById("imageModal");
+
+            const modalImage =
+                document.getElementById("modalImage");
+
 
             modalImage.src = image.src;
+
             modalImage.alt = image.alt;
 
-            modal.classList.add("active");
 
-            // Αποτρέπει το scrolling της σελίδας
+            /*
+             * Show fullscreen modal
+             */
+
+            modal.style.display = "flex";
+
+
+            /*
+             * Prevent background scrolling
+             */
+
             document.body.style.overflow = "hidden";
         }
 
 
+
+        /* ==========================================
+           CLOSE MODAL
+           ========================================== */
+
         function closeModal() {
 
-            const modal = document.getElementById("imageModal");
+            const modal =
+                document.getElementById("imageModal");
 
-            modal.classList.remove("active");
+
+            modal.style.display = "none";
+
+
+            /*
+             * Restore page scrolling
+             */
 
             document.body.style.overflow = "auto";
         }
 
 
+
+        /* ==========================================
+           CLOSE WHEN CLICKING BACKGROUND
+           ========================================== */
+
         function closeImage(event) {
 
             /*
-             * Κλείνει μόνο όταν πατηθεί το
-             * μαύρο background και όχι η ίδια η εικόνα.
+             * Close only when clicking
+             * the black background.
+             *
+             * Clicking the large image itself
+             * is handled separately by
+             * onclick="closeModal()".
              */
 
             if (event.target.id === "imageModal") {
+
                 closeModal();
+
             }
+
         }
 
 
-        /*
-         * Κλείσιμο με το πλήκτρο ESC
-         */
 
-        document.addEventListener("keydown", function(event) {
+        /* ==========================================
+           ESC KEY
+           ========================================== */
 
-            if (event.key === "Escape") {
-                closeModal();
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "Escape") {
+
+                    closeModal();
+
+                }
+
             }
+        );
 
-        });
 
     </script>
 
+
 </body>
+
 </html>
