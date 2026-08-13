@@ -1,631 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
+    <title>GFS Meteograms</title>
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f4f4f4;
+            text-align: center;
+        }
 
-<meta http-equiv="refresh" content="900">
+        h1 {
+            margin-bottom: 30px;
+        }
 
-<title>GFS & ECMWF Meteograms</title>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: auto;
+        }
 
-<style>
+        .city {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
 
-body {
-    margin: 0;
-    padding: 20px;
-    background: #eef3f6;
-    font-family: Arial, Helvetica, sans-serif;
-    color: #111;
-}
+        .city h2 {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
 
-h1 {
-    text-align: center;
-    margin: 5px 0 25px 0;
-    font-size: 28px;
-}
-
-h2 {
-    margin-top: 35px;
-    padding: 10px 15px;
-    background: #1f4e79;
-    color: white;
-    border-radius: 6px;
-}
-
-h3 {
-    margin: 15px 0 8px 0;
-    font-size: 20px;
-}
-
-.section {
-    margin-bottom: 35px;
-}
-
-.city {
-    background: white;
-    margin: 20px 0;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
-
-.images {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 12px;
-}
-
-.image-box {
-    background: #f8f8f8;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 5px;
-    text-align: center;
-}
-
-.image-box img {
-    width: 100%;
-    height: auto;
-    display: block;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.label {
-    font-weight: bold;
-    padding: 6px;
-    font-size: 14px;
-}
-
-.ecmwf-title {
-    background: #555;
-}
-
-.footer {
-    text-align: center;
-    margin-top: 40px;
-    padding: 15px;
-    color: #666;
-    font-size: 13px;
-}
-
-</style>
-
+        .city img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
 </head>
-
 
 <body>
 
-
-<h1>🌦️ GFS & ECMWF Meteograms</h1>
-
-
-<!-- ================================================= -->
-<!-- GFS -->
-<!-- ================================================= -->
-
-<div class="section">
-
-<h2>🇬🇷 GFS Meteograms</h2>
-
-
-<!-- ATHENS -->
-
-<div class="city">
-
-<h3>Athens</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS 00Z</div>
-<a href="athens00.png" target="_blank">
-<img src="athens00.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 06Z</div>
-<a href="athens06.png" target="_blank">
-<img src="athens06.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 12Z</div>
-<a href="athens12.png" target="_blank">
-<img src="athens12.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 18Z</div>
-<a href="athens18.png" target="_blank">
-<img src="athens18.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- KIATO -->
-
-<div class="city">
-
-<h3>Kiato</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS 00Z</div>
-<a href="kiato00.png" target="_blank">
-<img src="kiato00.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 06Z</div>
-<a href="kiato06.png" target="_blank">
-<img src="kiato06.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 12Z</div>
-<a href="kiato12.png" target="_blank">
-<img src="kiato12.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 18Z</div>
-<a href="kiato18.png" target="_blank">
-<img src="kiato18.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- LAMIA -->
-
-<div class="city">
-
-<h3>Lamia</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS 00Z</div>
-<a href="lamia00.png" target="_blank">
-<img src="lamia00.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 06Z</div>
-<a href="lamia06.png" target="_blank">
-<img src="lamia06.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 12Z</div>
-<a href="lamia12.png" target="_blank">
-<img src="lamia12.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 18Z</div>
-<a href="lamia18.png" target="_blank">
-<img src="lamia18.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- PATRA -->
-
-<div class="city">
-
-<h3>Patra</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS 00Z</div>
-<a href="patra00.png" target="_blank">
-<img src="patra00.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 06Z</div>
-<a href="patra06.png" target="_blank">
-<img src="patra06.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 12Z</div>
-<a href="patra12.png" target="_blank">
-<img src="patra12.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 18Z</div>
-<a href="patra18.png" target="_blank">
-<img src="patra18.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- SALONICA -->
-
-<div class="city">
-
-<h3>Salonica</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS 00Z</div>
-<a href="salonica00.png" target="_blank">
-<img src="salonica00.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 06Z</div>
-<a href="salonica06.png" target="_blank">
-<img src="salonica06.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 12Z</div>
-<a href="salonica12.png" target="_blank">
-<img src="salonica12.png">
-</a>
-</div>
-
-<div class="image-box">
-<div class="label">GFS 18Z</div>
-<a href="salonica18.png" target="_blank">
-<img src="salonica18.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- AGRINIO -->
-
-<div class="city">
-
-<h3>Agrinio</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="agrinio.png" target="_blank">
-<img src="agrinio.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- CHANIA -->
-
-<div class="city">
-
-<h3>Chania</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="chania.png" target="_blank">
-<img src="chania.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- FLORINA -->
-
-<div class="city">
-
-<h3>Florina</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="florina.png" target="_blank">
-<img src="florina.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- HERAKLION -->
-
-<div class="city">
-
-<h3>Heraklion</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="heraklion.png" target="_blank">
-<img src="heraklion.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- IKARIA -->
-
-<div class="city">
-
-<h3>Ikaria</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="ikaria.png" target="_blank">
-<img src="ikaria.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- IOANNINA -->
-
-<div class="city">
-
-<h3>Ioannina</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="ioannina.png" target="_blank">
-<img src="ioannina.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- KEFALONIA -->
-
-<div class="city">
-
-<h3>Kefalonia</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="kefalonia.png" target="_blank">
-<img src="kefalonia.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- LARISA -->
-
-<div class="city">
-
-<h3>Larisa</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="larisa.png" target="_blank">
-<img src="larisa.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- TRIKALA -->
-
-<div class="city">
-
-<h3>Trikala</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="trikala.png" target="_blank">
-<img src="trikala.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<!-- LONDON -->
-
-<div class="city">
-
-<h3>London</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">GFS</div>
-<a href="london.png" target="_blank">
-<img src="london.png">
-</a>
-</div>
-
-</div>
-</div>
-
-</div>
-
-
-<!-- ================================================= -->
-<!-- ECMWF -->
-<!-- ================================================= -->
-
-<div class="section">
-
-<h2 class="ecmwf-title">🌍 ECMWF Meteograms</h2>
-
-
-<div class="city">
-
-<h3>Athens</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="athens_ecmwf.png" target="_blank">
-<img src="athens_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<div class="city">
-
-<h3>Kiato</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="kiato_ecmwf.png" target="_blank">
-<img src="kiato_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<div class="city">
-
-<h3>Lamia</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="lamia_ecmwf.png" target="_blank">
-<img src="lamia_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<div class="city">
-
-<h3>Patra</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="patra_ecmwf.png" target="_blank">
-<img src="patra_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<div class="city">
-
-<h3>Salonica</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="salonica_ecmwf.png" target="_blank">
-<img src="salonica_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-
-<div class="city">
-
-<h3>Ikaria</h3>
-
-<div class="images">
-
-<div class="image-box">
-<div class="label">ECMWF</div>
-<a href="ikaria_ecmwf.png" target="_blank">
-<img src="ikaria_ecmwf.png">
-</a>
-</div>
-
-</div>
-</div>
-
-</div>
-
-
-<div class="footer">
-
-GFS & ECMWF Meteograms<br>
-Automatically updated via GitHub Actions
-
-</div>
-
+    <h1>GFS Meteograms</h1>
+
+    <div class="grid">
+
+        <div class="city">
+            <h2>Athens</h2>
+            <img src="athens_latest.png" alt="Athens GFS Meteogram">
+        </div>
+
+        <div class="city">
+            <h2>Kiato</h2>
+            <img src="kiato_latest.png" alt="Kiato GFS Meteogram">
+        </div>
+
+        <div class="city">
+            <h2>Lamia</h2>
+            <img src="lamia_latest.png" alt="Lamia GFS Meteogram">
+        </div>
+
+        <div class="city">
+            <h2>Patra</h2>
+            <img src="patra_latest.png" alt="Patra GFS Meteogram">
+        </div>
+
+        <div class="city">
+            <h2>Salonica</h2>
+            <img src="salonica_latest.png" alt="Salonica GFS Meteogram">
+        </div>
+
+    </div>
 
 </body>
-
 </html>
