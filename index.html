@@ -43,6 +43,52 @@
             width: 100%;
             height: auto;
             display: block;
+            cursor: zoom-in;
+        }
+
+        /* =========================================
+           LIGHTBOX
+           ========================================= */
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.90);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            cursor: zoom-out;
+        }
+
+        .lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            box-shadow: 0 0 25px rgba(255,255,255,0.25);
+            cursor: default;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -55,30 +101,94 @@
 
         <div class="city">
             <h2>Athens</h2>
-            <img src="athens_latest.png" alt="Athens GFS Meteogram">
+            <img src="athens_latest.png" alt="Athens GFS Meteogram" onclick="openLightbox(this)">
         </div>
 
         <div class="city">
             <h2>Kiato</h2>
-            <img src="kiato_latest.png" alt="Kiato GFS Meteogram">
+            <img src="kiato_latest.png" alt="Kiato GFS Meteogram" onclick="openLightbox(this)">
         </div>
 
         <div class="city">
             <h2>Lamia</h2>
-            <img src="lamia_latest.png" alt="Lamia GFS Meteogram">
+            <img src="lamia_latest.png" alt="Lamia GFS Meteogram" onclick="openLightbox(this)">
         </div>
 
         <div class="city">
             <h2>Patra</h2>
-            <img src="patra_latest.png" alt="Patra GFS Meteogram">
+            <img src="patra_latest.png" alt="Patra GFS Meteogram" onclick="openLightbox(this)">
         </div>
 
         <div class="city">
             <h2>Salonica</h2>
-            <img src="salonica_latest.png" alt="Salonica GFS Meteogram">
+            <img src="salonica_latest.png" alt="Salonica GFS Meteogram" onclick="openLightbox(this)">
         </div>
 
     </div>
+
+
+    <!-- =========================================
+         LIGHTBOX
+         ========================================= -->
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+
+        <span class="close" onclick="closeLightbox(event)">
+            &times;
+        </span>
+
+        <img id="lightboxImage" src="" alt="Zoomed meteogram">
+
+    </div>
+
+
+    <script>
+
+        function openLightbox(image) {
+
+            const lightbox = document.getElementById("lightbox");
+            const lightboxImage = document.getElementById("lightboxImage");
+
+            lightboxImage.src = image.src;
+
+            lightbox.style.display = "flex";
+        }
+
+
+        function closeLightbox(event) {
+
+            /*
+             * Close only when:
+             * - clicking the dark background
+             * - clicking the X
+             */
+
+            if (
+                event.target.id === "lightbox" ||
+                event.target.classList.contains("close")
+            ) {
+
+                document.getElementById("lightbox").style.display = "none";
+
+                document.getElementById("lightboxImage").src = "";
+            }
+        }
+
+
+        /* ESC key closes zoom */
+
+        document.addEventListener("keydown", function(event) {
+
+            if (event.key === "Escape") {
+
+                document.getElementById("lightbox").style.display = "none";
+
+                document.getElementById("lightboxImage").src = "";
+            }
+
+        });
+
+    </script>
 
 </body>
 </html>
