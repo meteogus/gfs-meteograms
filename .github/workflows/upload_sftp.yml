@@ -61,13 +61,14 @@ jobs:
           python trikala.py
           python london.py
 
-      - name: Test SFTP write access
+            - name: Upload images via SFTP
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASS: ${{ secrets.SFTP_PASS }}
           SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
+          RUN_HOUR: ${{ env.run_hour }}
 
         run: |
           python - <<'PYEOF'
@@ -76,20 +77,34 @@ jobs:
           import sys
           import posixpath
 
+          run_hour = os.getenv("RUN_HOUR", "00")
+
+          files = [
+              f"athens{run_hour}.png",
+              f"kiato{run_hour}.png",
+              f"lamia{run_hour}.png",
+              f"patra{run_hour}.png",
+              f"salonica{run_hour}.png",
+              "agrinio.png",
+              "chania.png",
+              "florina.png",
+              "heraklion.png",
+              "ikaria.png",
+              "ioannina.png",
+              "kefalonia.png",
+              "larisa.png",
+              "trikala.png",
+              "london.png",
+          ]
+
           host = os.getenv("SFTP_HOST")
           port = int(os.getenv("SFTP_PORT", "22"))
           user = os.getenv("SFTP_USER")
           password = os.getenv("SFTP_PASS")
           folder = os.getenv("SFTP_FOLDER", "/").rstrip("/")
 
-          print("========================================")
-          print("SFTP WRITE DIAGNOSTIC TEST")
-          print("========================================")
-
-          print(f"Host: {host}")
-          print(f"Port: {port}")
-          print(f"User: {user}")
-          print(f"Folder: {folder}")
+          print(f"🕒 Using run_hour: {run_hour}")
+          print(f"📡 Connecting to {host}:{port} as {user} ...")
 
           try:
               transport = paramiko.Transport((host, port))
@@ -106,117 +121,119 @@ jobs:
               print("✅ SFTP connection established")
 
           except Exception as e:
-              print(f"❌ Connection failed: {repr(e)}")
+              print(f"❌ SFTP connection failed: {repr(e)}")
               sys.exit(1)
 
-          print("")
-          print("TEST 1: Checking remote folder")
+          failed = []
 
-          try:
-              attr = sftp.stat(folder)
+          for filename in files:
 
-              print(f"✅ Folder exists: {folder}")
-              print(f"   Mode: {oct(attr.st_mode)}")
+              local_path = filename
+              remote_path = posixpath.join(
+                  folder,
+                  filename
+              )
 
-          except Exception as e:
-              print(f"❌ Cannot stat folder: {repr(e)}")
+              if not os.path.exists(local_path):
+                  print(
+                      f"❌ Local file not found: "
+                      f"{local_path}"
+                  )
+                  failed.append(filename)
+                  continue
 
-          print("")
-          print("TEST 2: Listing remote folder")
+              local_size = os.path.getsize(local_path)
 
-          try:
-              files = sftp.listdir(folder)
-
-              print("✅ Folder readable")
-              print(f"   Files found: {len(files)}")
-
-              for f in files[:10]:
-                  print(f"   - {f}")
-
-          except Exception as e:
-              print(f"❌ Cannot list folder: {repr(e)}")
-
-          test_name = ".sftp_test.txt"
-
-          test_path = posixpath.join(
-              folder,
-              test_name
-          )
-
-          print("")
-          print("TEST 3: Creating test file")
-          print(f"Remote path: {test_path}")
-
-          try:
-              with sftp.open(test_path, "wb") as f:
-                  f.write(b"SFTP WRITE TEST")
-
-              print("✅ Test file created")
-
-          except Exception as e:
+              print("")
               print(
-                  f"❌ Cannot create test file: "
-                  f"{repr(e)}"
+                  f"⬆️ Uploading {filename} "
+                  f"({local_size:,} bytes)"
               )
 
-          print("")
-          print("TEST 4: Checking test file")
+              try:
 
-          try:
-              attr = sftp.stat(test_path)
+                  # Open local file
+                  with open(local_path, "rb") as local_file:
 
-              print("✅ Test file exists")
-              print(f"   Size: {attr.st_size} bytes")
+                      # Open remote file explicitly
+                      remote_file = sftp.file(
+                          remote_path,
+                          "wb"
+                      )
 
-          except Exception as e:
-              print(
-                  f"❌ Cannot stat test file: "
-                  f"{repr(e)}"
-              )
+                      # Write in chunks
+                      while True:
 
-          renamed_path = posixpath.join(
-              folder,
-              ".sftp_test_renamed.txt"
-          )
+                          chunk = local_file.read(32768)
 
-          print("")
-          print("TEST 5: Rename test")
+                          if not chunk:
+                              break
 
-          try:
-              sftp.rename(
-                  test_path,
-                  renamed_path
-              )
+                          remote_file.write(chunk)
 
-              print("✅ Rename successful")
+                      # Force transmission
+                      remote_file.flush()
 
-          except Exception as e:
-              print(
-                  f"❌ Rename failed: "
-                  f"{repr(e)}"
-              )
+                      # Close remote file
+                      remote_file.close()
 
-          print("")
-          print("TEST 6: Delete test")
+                  # Verify remote size
+                  remote_attr = sftp.stat(remote_path)
+                  remote_size = remote_attr.st_size
 
-          try:
-              sftp.remove(
-                  renamed_path
-              )
+                  print(
+                      f"Remote size: "
+                      f"{remote_size:,} bytes"
+                  )
 
-              print("✅ Delete successful")
+                  if remote_size != local_size:
 
-          except Exception as e:
-              print(
-                  f"❌ Delete failed: "
-                  f"{repr(e)}"
-              )
+                      print(
+                          f"❌ SIZE MISMATCH: "
+                          f"{remote_size:,} != "
+                          f"{local_size:,}"
+                      )
+
+                      failed.append(filename)
+
+                  else:
+
+                      print(
+                          f"✅ Upload successful: "
+                          f"{filename}"
+                      )
+
+              except Exception as e:
+
+                  print(
+                      f"❌ Failed to upload "
+                      f"{filename}: {repr(e)}"
+                  )
+
+                  failed.append(filename)
 
           sftp.close()
           transport.close()
 
           print("")
           print("========================================")
-          print("DIAGNOSTIC TEST FINISHED")
-          print("========================================")
+
+          if failed:
+
+              print(
+                  f"❌ Failed files: "
+                  f"{len(failed)}"
+              )
+
+              for filename in failed:
+                  print(f"   - {filename}")
+
+              print("========================================")
+
+              sys.exit(1)
+
+          else:
+
+              print("✅ ALL FILES UPLOADED SUCCESSFULLY")
+              print("========================================")
           PYEOF
