@@ -46,7 +46,6 @@ jobs:
       # ============================================
 
       - name: Determine GFS run hour
-        id: gfs_run
         run: |
 
           hour=$(date -u +"%H")
@@ -98,58 +97,92 @@ jobs:
 
 
       # ============================================
-      # 6. CREATE LATEST COPIES
+      # 6. PREPARE IMAGES DIRECTORY
       # ============================================
 
-      - name: Create latest copies
+      - name: Prepare images directory
+        run: |
+
+          mkdir -p images
+
+          echo "========================================"
+          echo "MOVING GENERATED PNG FILES TO images/"
+          echo "========================================"
+
+          shopt -s nullglob
+
+          for file in *.png; do
+              mv "$file" images/
+          done
+
+          echo ""
+          echo "Images directory:"
+          ls -lh images/
+
+
+      # ============================================
+      # 7. CREATE / UPDATE LATEST FILES
+      # ============================================
+
+      - name: Create latest meteograms
         run: |
 
           echo "========================================"
-          echo "CREATING LATEST METEOGRAM COPIES"
+          echo "CREATING LATEST METEOGRAM FILES"
           echo "========================================"
 
-          cp "athens${{ env.run_hour }}.png" athens_latest.png
-          cp "kiato${{ env.run_hour }}.png" kiato_latest.png
-          cp "lamia${{ env.run_hour }}.png" lamia_latest.png
-          cp "patra${{ env.run_hour }}.png" patra_latest.png
-          cp "salonica${{ env.run_hour }}.png" salonica_latest.png
+          cities=(
+            athens
+            kiato
+            lamia
+            patra
+            salonica
+          )
 
-          cp "agrinio.png" agrinio_latest.png
-          cp "chania.png" chania_latest.png
-          cp "florina.png" florina_latest.png
-          cp "heraklion.png" heraklion_latest.png
-          cp "ikaria.png" ikaria_latest.png
-          cp "ioannina.png" ioannina_latest.png
-          cp "kefalonia.png" kefalonia_latest.png
-          cp "larisa.png" larisa_latest.png
-          cp "trikala.png" trikala_latest.png
-          cp "london.png" london_latest.png
+          for city in "${cities[@]}"; do
+
+              source_file="images/${city}${run_hour}.png"
+              latest_file="images/${city}_latest.png"
+
+              if [ -f "$source_file" ]; then
+
+                  cp "$source_file" "$latest_file"
+
+                  echo "✅ ${city}_latest.png ← ${city}${run_hour}.png"
+
+              else
+
+                  echo "⚠️ Missing: $source_file"
+
+              fi
+
+          done
 
           echo ""
-          echo "Latest files created:"
-          ls -lh *_latest.png
+          echo "Latest files:"
+          ls -lh images/*_latest.png 2>/dev/null || true
 
 
       # ============================================
-      # 7. CHECK GENERATED FILES
+      # 8. CHECK GENERATED FILES
       # ============================================
 
       - name: Check generated PNG files
         run: |
 
           echo "========================================"
-          echo "GENERATED METEOGRAM FILES"
+          echo "ALL PNG FILES"
           echo "========================================"
 
-          ls -lh *.png
+          find images -maxdepth 1 -name "*.png" -type f -printf "%f\n" | sort
 
           echo ""
           echo "Total PNG files:"
-          find . -maxdepth 1 -name "*.png" | wc -l
+          find images -maxdepth 1 -name "*.png" -type f | wc -l
 
 
       # ============================================
-      # 8. CONFIGURE GIT
+      # 9. CONFIGURE GIT
       # ============================================
 
       - name: Configure Git
@@ -160,13 +193,13 @@ jobs:
 
 
       # ============================================
-      # 9. ADD PNG FILES
+      # 10. ADD METEOGRAM FILES
       # ============================================
 
-      - name: Add generated PNG files
+      - name: Add meteogram files
         run: |
 
-          git add "*.png"
+          git add images/*.png
 
           echo "========================================"
           echo "GIT STATUS"
@@ -176,7 +209,7 @@ jobs:
 
 
       # ============================================
-      # 10. COMMIT CHANGES
+      # 11. COMMIT
       # ============================================
 
       - name: Commit meteograms
@@ -184,17 +217,18 @@ jobs:
 
           if git diff --cached --quiet; then
 
-              echo "ℹ️ No changes to commit."
+              echo "ℹ️ No meteogram changes to commit."
 
           else
 
-              git commit -m "Update meteograms - GFS ${{ env.run_hour }}Z"
+              git commit \
+                -m "Update GFS meteograms - ${run_hour}Z"
 
           fi
 
 
       # ============================================
-      # 11. PUSH TO GITHUB
+      # 12. PUSH
       # ============================================
 
       - name: Push meteograms to GitHub
@@ -204,43 +238,27 @@ jobs:
 
 
       # ============================================
-      # 12. FINISHED
+      # 13. SUMMARY
       # ============================================
 
       - name: Publish summary
         run: |
 
           echo "========================================"
-          echo "✅ METEOGRAM PUBLICATION COMPLETE"
+          echo "✅ GFS METEOGRAM PUBLICATION COMPLETE"
           echo "========================================"
 
           echo ""
-          echo "GFS run: ${{ env.run_hour }}Z"
+          echo "GFS run: ${run_hour}Z"
 
           echo ""
-          echo "GitHub repository:"
-          echo "https://github.com/meteogus/gfs-meteograms"
+          echo "Repository:"
+          echo "https://github.com/meteogus/meteograms"
 
           echo ""
           echo "GitHub Pages:"
-          echo "https://meteogus.github.io/gfs-meteograms/"
+          echo "https://meteogus.github.io/meteograms/"
 
           echo ""
-          echo "Latest Athens:"
-          echo "https://meteogus.github.io/gfs-meteograms/athens_latest.png"
-
-          echo ""
-          echo "Latest Kiato:"
-          echo "https://meteogus.github.io/gfs-meteograms/kiato_latest.png"
-
-          echo ""
-          echo "Latest Lamia:"
-          echo "https://meteogus.github.io/gfs-meteograms/lamia_latest.png"
-
-          echo ""
-          echo "Latest Patra:"
-          echo "https://meteogus.github.io/gfs-meteograms/patra_latest.png"
-
-          echo ""
-          echo "Latest Salonica:"
-          echo "https://meteogus.github.io/gfs-meteograms/salonica_latest.png"
+          echo "Images:"
+          echo "https://meteogus.github.io/meteograms/images/"
