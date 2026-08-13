@@ -6,8 +6,11 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
+
   build-and-publish:
     runs-on: ubuntu-latest
 
@@ -57,7 +60,7 @@ jobs:
 
 
       # ============================================
-      # 5. CHECK GENERATED FILES
+      # 5. CHECK GENERATED ECMWF FILES
       # ============================================
 
       - name: Check generated ECMWF PNG files
@@ -102,7 +105,7 @@ jobs:
 
 
       # ============================================
-      # 8. COMMIT
+      # 8. COMMIT ECMWF FILES
       # ============================================
 
       - name: Commit ECMWF meteograms
@@ -130,7 +133,303 @@ jobs:
 
 
       # ============================================
-      # 10. SUMMARY
+      # 10. PREPARE GITHUB PAGES
+      # ============================================
+
+      - name: Prepare Pages directory
+        run: |
+
+          mkdir -p public
+
+          # Copy ALL GFS PNG files
+          find . -maxdepth 1 -name "*.png" \
+            -exec cp {} public/ \;
+
+          echo ""
+          echo "========================================"
+          echo "PAGES FILES"
+          echo "========================================"
+
+          ls -lh public/
+
+
+      # ============================================
+      # 11. CREATE INDEX.HTML
+      # ============================================
+
+      - name: Create Pages index
+        run: |
+
+          cat > public/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+
+          <head>
+
+            <meta charset="UTF-8">
+
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+
+            <meta http-equiv="refresh"
+                  content="300">
+
+            <title>Meteograms</title>
+
+            <style>
+
+              body {
+                margin: 0;
+                padding: 20px;
+                background: #eeeeee;
+                font-family: Arial, sans-serif;
+              }
+
+              h1 {
+                text-align: center;
+                margin-bottom: 5px;
+              }
+
+              .updated {
+                text-align: center;
+                color: #555;
+                margin-bottom: 30px;
+              }
+
+              h2 {
+                text-align: center;
+                margin-top: 35px;
+                margin-bottom: 20px;
+              }
+
+              .grid {
+                display: grid;
+                grid-template-columns:
+                  repeat(auto-fit, minmax(450px, 1fr));
+
+                gap: 20px;
+
+                max-width: 1800px;
+
+                margin: auto;
+              }
+
+              .card {
+                background: white;
+
+                padding: 10px;
+
+                border-radius: 8px;
+
+                box-shadow:
+                  0 2px 8px rgba(0,0,0,0.15);
+              }
+
+              .card h3 {
+                text-align: center;
+
+                margin:
+                  5px 0 10px;
+
+                font-size: 18px;
+              }
+
+              .card img {
+                width: 100%;
+                height: auto;
+                display: block;
+              }
+
+            </style>
+
+          </head>
+
+
+          <body>
+
+            <h1>Meteograms</h1>
+
+            <div class="updated">
+              GFS + ECMWF
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- GFS -->
+            <!-- ================================= -->
+
+            <h2>GFS</h2>
+
+            <div class="grid">
+
+
+              <div class="card">
+                <h3>Athens</h3>
+                <img src="athens${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Kiato</h3>
+                <img src="kiato${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Lamia</h3>
+                <img src="lamia${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Patra</h3>
+                <img src="patra${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Salonica</h3>
+                <img src="salonica${{ env.run_hour }}.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Agrinio</h3>
+                <img src="agrinio.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Chania</h3>
+                <img src="chania.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Florina</h3>
+                <img src="florina.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Heraklion</h3>
+                <img src="heraklion.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Ikaria</h3>
+                <img src="ikaria.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Ioannina</h3>
+                <img src="ioannina.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Kefalonia</h3>
+                <img src="kefalonia.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Larisa</h3>
+                <img src="larisa.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Trikala</h3>
+                <img src="trikala.png">
+              </div>
+
+
+              <div class="card">
+                <h3>London</h3>
+                <img src="london.png">
+              </div>
+
+
+            </div>
+
+
+            <!-- ================================= -->
+            <!-- ECMWF -->
+            <!-- ================================= -->
+
+            <h2>ECMWF</h2>
+
+            <div class="grid">
+
+
+              <div class="card">
+                <h3>Athens</h3>
+                <img src="athens_ecmwf.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Kiato</h3>
+                <img src="kiato_ecmwf.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Lamia</h3>
+                <img src="lamia_ecmwf.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Patra</h3>
+                <img src="patra_ecmwf.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Salonica</h3>
+                <img src="salonica_ecmwf.png">
+              </div>
+
+
+              <div class="card">
+                <h3>Ikaria</h3>
+                <img src="ikaria_ecmwf.png">
+              </div>
+
+
+            </div>
+
+          </body>
+
+          </html>
+          EOF
+
+
+      # ============================================
+      # 12. UPLOAD PAGES ARTIFACT
+      # ============================================
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
+
+
+      # ============================================
+      # 13. DEPLOY TO GITHUB PAGES
+      # ============================================
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+
+      # ============================================
+      # 14. SUMMARY
       # ============================================
 
       - name: Publish summary
@@ -147,3 +446,11 @@ jobs:
           echo ""
           echo "GitHub Pages:"
           echo "https://meteogus.github.io/gfs-meteograms/"
+
+          echo ""
+          echo "ECMWF Athens:"
+          echo "https://meteogus.github.io/gfs-meteograms/athens_ecmwf.png"
+
+          echo ""
+          echo "ECMWF Kiato:"
+          echo "https://meteogus.github.io/gfs-meteograms/kiato_ecmwf.png"
