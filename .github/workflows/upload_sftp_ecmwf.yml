@@ -37,9 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-
           python -m pip install --upgrade pip
-
           pip install -r requirements.txt
 
 
@@ -78,15 +76,15 @@ jobs:
           done
 
           echo ""
-          echo "Images directory:"
-          ls -lh images/
+          echo "ECMWF images:"
+          ls -lh images/*_ecmwf.png
 
 
       # ============================================
       # 6. CHECK GENERATED ECMWF FILES
       # ============================================
 
-      - name: Check generated ECMWF PNG files
+      - name: Check generated ECMWF files
         run: |
 
           echo "========================================"
@@ -101,7 +99,6 @@ jobs:
             | sort
 
           echo ""
-
           echo "Total ECMWF PNG files:"
 
           find images \
@@ -160,13 +157,22 @@ jobs:
 
 
       # ============================================
-      # 10. PUSH
+      # 10. SYNC WITH REMOTE AND PUSH
       # ============================================
 
-      - name: Push ECMWF meteograms to GitHub
+      - name: Sync with remote and push ECMWF meteograms
         run: |
 
-          git push origin HEAD:${{ github.ref_name }}
+          echo "========================================"
+          echo "SYNCING WITH REMOTE MAIN"
+          echo "========================================"
+
+          git pull --rebase origin main
+
+          echo ""
+          echo "Pushing ECMWF meteograms..."
+
+          git push origin HEAD:main
 
 
       # ============================================
@@ -189,5 +195,5 @@ jobs:
           echo "https://meteogus.github.io/meteograms/"
 
           echo ""
-          echo "Images:"
+          echo "ECMWF images:"
           echo "https://meteogus.github.io/meteograms/images/"
