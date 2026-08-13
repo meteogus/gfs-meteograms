@@ -1,31 +1,53 @@
-name: Run and Upload ECMWF Meteograms via SFTP
+name: Run and Publish ECMWF Meteograms
 
 on:
-  workflow_dispatch:             # Allow manual trigger from GitHub UI
-  repository_dispatch:           # Allow external API trigger via POST
+  workflow_dispatch:
+  repository_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-upload:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================
+      # 1. CHECKOUT REPOSITORY
+      # ============================================
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+
+      # ============================================
+      # 2. SET UP PYTHON
+      # ============================================
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+
+      # ============================================
+      # 3. INSTALL DEPENDENCIES
+      # ============================================
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install paramiko
 
-      # ✅ Run meteogram scripts
-      - name: Run meteogram scripts
+
+      # ============================================
+      # 4. RUN ECMWF METEOGRAM SCRIPTS
+      # ============================================
+
+      - name: Run ECMWF meteogram scripts
         run: |
+
           python athens_ecmwf.py
           python kiato_ecmwf.py
           python lamia_ecmwf.py
@@ -33,59 +55,95 @@ jobs:
           python salonica_ecmwf.py
           python ikaria_ecmwf.py
 
-      # ✅ Upload dynamically named files + static (london.png)
-      - name: Upload images via SFTP with paramiko
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT }}
-          SFTP_USER: ${{ secrets.SFTP_USER }}
-          SFTP_PASS: ${{ secrets.SFTP_PASS }}
-          SFTP_FOLDER: ${{ secrets.SFTP_FOLDER }}
 
+      # ============================================
+      # 5. CHECK GENERATED FILES
+      # ============================================
+
+      - name: Check generated ECMWF PNG files
         run: |
-          python - <<EOF
-          import paramiko
-          import os
-          import sys
 
-          files = [
-              f"athens_ecmwf.png",
-              f"kiato_ecmwf.png",
-              f"lamia_ecmwf.png",
-              f"patra_ecmwf.png",
-              f"salonica_ecmwf.png",
-              f"ikaria_ecmwf.png",
-          ]
+          echo "========================================"
+          echo "GENERATED ECMWF METEOGRAM FILES"
+          echo "========================================"
 
-          host = os.getenv('SFTP_HOST')
-          port = int(os.getenv('SFTP_PORT', '22'))
-          user = os.getenv('SFTP_USER')
-          password = os.getenv('SFTP_PASS')
-          folder = os.getenv('SFTP_FOLDER', '/').rstrip('/')
+          ls -lh *_ecmwf.png
 
-          if not all([host, user, password]):
-              print("❌ Missing SFTP credentials")
-              sys.exit(1)
+          echo ""
+          echo "Files:"
+          find . -maxdepth 1 -name "*_ecmwf.png"
 
-          print(f"📡 Connecting to {host}:{port} as {user} ...")
-          try:
-              transport = paramiko.Transport((host, port))
-              transport.connect(username=user, password=password)
-              sftp = paramiko.SFTPClient.from_transport(transport)
-          except Exception as e:
-              print(f"❌ Failed to connect or authenticate: {e}")
-              sys.exit(1)
 
-          for f in files:
-              try:
-                  local_path = f
-                  remote_path = f"{folder}/{f}"
-                  print(f"⬆️ Uploading {local_path} to {remote_path} ...")
-                  sftp.put(local_path, remote_path)
-              except Exception as e:
-                  print(f"❌ Failed to upload {f}: {e}")
+      # ============================================
+      # 6. CONFIGURE GIT
+      # ============================================
 
-          sftp.close()
-          transport.close()
-          print("✅ All files uploaded successfully.")
-          EOF
+      - name: Configure Git
+        run: |
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+
+      # ============================================
+      # 7. ADD ECMWF PNG FILES
+      # ============================================
+
+      - name: Add ECMWF meteograms
+        run: |
+
+          git add "*_ecmwf.png"
+
+          echo "========================================"
+          echo "GIT STATUS"
+          echo "========================================"
+
+          git status --short
+
+
+      # ============================================
+      # 8. COMMIT
+      # ============================================
+
+      - name: Commit ECMWF meteograms
+        run: |
+
+          if git diff --cached --quiet; then
+
+              echo "ℹ️ No ECMWF changes to commit."
+
+          else
+
+              git commit -m "Update ECMWF meteograms"
+
+          fi
+
+
+      # ============================================
+      # 9. PUSH TO GITHUB
+      # ============================================
+
+      - name: Push ECMWF meteograms to GitHub
+        run: |
+
+          git push origin HEAD:${{ github.ref_name }}
+
+
+      # ============================================
+      # 10. SUMMARY
+      # ============================================
+
+      - name: Publish summary
+        run: |
+
+          echo "========================================"
+          echo "✅ ECMWF METEOGRAM PUBLICATION COMPLETE"
+          echo "========================================"
+
+          echo ""
+          echo "GitHub repository:"
+          echo "https://github.com/meteogus/gfs-meteograms"
+
+          echo ""
+          echo "GitHub Pages:"
+          echo "https://meteogus.github.io/gfs-meteograms/"
